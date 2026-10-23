@@ -43,9 +43,21 @@ Integrations that need the internet (xAI, bank aggregators, market data, a self-
 
 ## Status
 
-The Android app lives in `apps/mobile` (Expo SDK 57, TypeScript, [Corsair Native](https://corsairui.vercel.app/native)). The pilot screen lists accounts, income, expenses and transfers. Amounts are centavos. A transfer does not change net worth. On Android, a development build stores that ledger in SQLCipher; the web preview keeps it in memory only, because that build cannot encrypt the file. There is no APK release yet. `main` only changes through pull requests.
+The Android app lives in `apps/mobile` (Expo SDK 57, TypeScript, [Corsair Native](https://corsairui.vercel.app/native)). The pilot has accounts, movements, monthly charts and an assistant. Amounts are centavos. A transfer does not change net worth, and it is not drawn as income or spending. Phrases such as “gastei 32,50 no mercado” stay on the device until you confirm them. A key from [console.x.ai](https://console.x.ai) is optional and is stored in the Android keystore; the Cursor Grok Bot is not an API key and is not used. WhatsApp goes through `apps/bridge`, a server you run yourself with your Twilio credentials. The web preview keeps everything in memory. There is no APK yet. `main` only changes through pull requests.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) if you want to help, and [PRIVACY.md](./PRIVACY.md) for what is allowed to leave the device.
+
+## WhatsApp and xAI
+
+Twilio credentials stay in a bridge you run. Copy `apps/bridge/.env.example` to `apps/bridge/.env`, fill your account and a secret you choose, and publish `ORVIO_PUBLIC_WEBHOOK_URL` over public HTTPS. Twilio does not accept a self-signed certificate. From `apps/bridge`, run:
+
+```bash
+node --experimental-strip-types --env-file=.env src/main.ts
+```
+
+In the app, open Assistente and then “WhatsApp e chave da xAI”. Put the address the phone can reach and the same secret. The app only pulls messages while it is open. A posting is written after you reply SIM or tap Confirmar.
+
+The model is `grok-4.7` on `https://api.x.ai/v1/responses`, with your key from [console.x.ai](https://console.x.ai). The Cursor Grok Bot is not that key. Requests ask xAI not to store them (`store: false`). The prompt carries account names and this month's totals, not the database file.
 
 ## License
 

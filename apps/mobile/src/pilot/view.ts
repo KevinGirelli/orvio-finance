@@ -1,3 +1,4 @@
+import { categoryLabel } from "../domain/categories.ts"
 import { activity, balance, netWorth, type Ledger } from "../domain/ledger.ts"
 import { formatBrl, money } from "../domain/money.ts"
 
@@ -62,10 +63,11 @@ export function summarize(ledger: Ledger): Summary {
         item.note ||
         (item.kind === "income" ? "Entrada" : item.kind === "expense" ? "Saída" : "Saldo inicial")
       const signed = item.kind === "expense" ? -item.minor : item.minor
+      const category = item.category ? categoryLabel[item.category] : ""
       return {
         id: item.id,
         title,
-        detail: accountName,
+        detail: category ? `${category} · ${accountName}` : accountName,
         amount: formatBrl(money(signed)),
         when: item.occurredOn,
       }
