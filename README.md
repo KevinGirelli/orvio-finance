@@ -43,7 +43,7 @@ Integrations that need the internet (xAI, bank aggregators, market data, a self-
 
 ## Status
 
-The Android app lives in `apps/mobile` (Expo SDK 57, TypeScript, [Corsair Native](https://corsairui.vercel.app/native)). The screen is still the dark shell. Ledger rules live in `apps/mobile/src/domain`. SQLite persistence lives in `apps/mobile/src/persistence`: the same statements are tested on Node, and a development build turns on SQLCipher with a key kept in the Android Keystore via SecureStore. Expo Go cannot encrypt the file, so that build refuses to keep a database. There is no APK release yet. `main` only changes through pull requests.
+The Android app lives in `apps/mobile` (Expo SDK 57, TypeScript, [Corsair Native](https://corsairui.vercel.app/native)). The pilot screen lists accounts, income, expenses and transfers. Amounts are centavos. A transfer does not change net worth. On Android, a development build stores that ledger in SQLCipher; the web preview keeps it in memory only, because that build cannot encrypt the file. There is no APK release yet. `main` only changes through pull requests.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) if you want to help, and [PRIVACY.md](./PRIVACY.md) for what is allowed to leave the device.
 
