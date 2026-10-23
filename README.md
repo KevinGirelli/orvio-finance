@@ -43,7 +43,7 @@ Integrations that need the internet (xAI, bank aggregators, market data, a self-
 
 ## Status
 
-The Android app lives in `apps/mobile` (Expo SDK 57, TypeScript, [Corsair Native](https://corsairui.vercel.app/native)). It is a shell: dark theme, the octopus mark, and no ledger yet. There is no APK release. `main` only changes through pull requests.
+The Android app lives in `apps/mobile` (Expo SDK 57, TypeScript, [Corsair Native](https://corsairui.vercel.app/native)). The screen is still the dark shell. Ledger rules (money in centavos, accounts, income, expense, and transfers) live in `apps/mobile/src/domain` and are covered by `pnpm test`. Nothing is stored on the device yet, and there is no APK release. `main` only changes through pull requests.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) if you want to help, and [PRIVACY.md](./PRIVACY.md) for what is allowed to leave the device.
 
