@@ -13,6 +13,10 @@ Installed as source from [Corsair UI](https://github.com/KevinGirelli/corsair-ui
 
 The app was started from `expo-template-blank-typescript` (MIT License, Copyright 2015-present 650 Industries, Inc.). The app's own licence is the repository [MIT licence](./LICENSE).
 
+## SQLCipher
+
+A development build links SQLCipher through the `expo-sqlite` dependency (`useSQLCipher`). The source is not copied into this repository. SQLCipher is licensed by Zetetic under a BSD-style licence.
+
 ## Notices to add later
 
 Dependencies of the Expo app, the download site, and any optional bridge will be recorded in this file when they land. Do not copy code whose licence forbids redistribution.
