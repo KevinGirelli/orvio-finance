@@ -1,4 +1,4 @@
-import { Image, ScrollView, StyleSheet, View } from "react-native"
+import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ import { assess, type Mood, type Shield } from "./game.ts"
 import { Disc, Glyph, type GlyphName, Wash } from "./icons.tsx"
 import { MovementRow } from "./rows.tsx"
 import { summarize, todayIso } from "./view.ts"
+import { Pop, Wiggle } from "./motion.tsx"
 
 const moodMark: Record<Mood, { name: GlyphName; label: string }> = {
   quiet: { name: "moon", label: "Quieto" },
@@ -33,10 +34,12 @@ type HomeScreenProps = {
   ledger: Ledger
   profile: Profile
   memoryOnly: boolean
+  worthToken: number
   onCreateMovement: () => void
+  onOpenInvest: () => void
 }
 
-export function HomeScreen({ ledger, profile, onCreateMovement }: HomeScreenProps) {
+export function HomeScreen({ ledger, profile, worthToken, onCreateMovement, onOpenInvest }: HomeScreenProps) {
   const { colors } = useTheme()
   const today = todayIso(new Date())
   const summary = summarize(ledger)
@@ -51,7 +54,9 @@ export function HomeScreen({ ledger, profile, onCreateMovement }: HomeScreenProp
       <Wash color={colors.ring} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.brand}>
-          <Image source={require("../../assets/logo-orvio.png")} style={styles.logo} accessibilityLabel="Orvio" />
+          <Wiggle>
+            <Image source={require("../../assets/logo-orvio.png")} style={styles.logo} accessibilityLabel="Orvio" />
+          </Wiggle>
           <View style={styles.brandText}>
             <Text variant="h3">{profile.name ? profile.name : "Orvio"}</Text>
             <View style={[styles.pill, { backgroundColor: withAlpha(moodColor, 0.45) }]}>
@@ -64,7 +69,9 @@ export function HomeScreen({ ledger, profile, onCreateMovement }: HomeScreenProp
         </View>
         <View style={[styles.card, { backgroundColor: withAlpha(colors.ring, 0.28), borderColor: colors.ring }]}>
           <Text variant="small">Patrimônio</Text>
-          <CountUp value={worth} duration={0} format={(value) => formatBrl(money(value))} />
+          <Pop token={worthToken}>
+            <CountUp value={worth} duration={800} format={(value) => formatBrl(money(value))} />
+          </Pop>
           <View style={styles.stats}>
             <View style={styles.stat}>
               <Text variant="display" style={{ color: colors.ring, fontSize: 40, lineHeight: 46 }}>
@@ -95,6 +102,18 @@ export function HomeScreen({ ledger, profile, onCreateMovement }: HomeScreenProp
         </View>
         <MonthChart bars={monthSeries(ledger, today)} />
         <CategoryChart bars={categorySeries(ledger, today)} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Investimentos"
+          onPress={onOpenInvest}
+          style={[styles.invest, { borderColor: "#D2B4EF", backgroundColor: withAlpha("#D2B4EF", 0.28) }]}
+        >
+          <Disc color="#D2B4EF">
+            <Glyph name="coin" color="#D2B4EF" />
+          </Disc>
+          <Text>Investir</Text>
+          <Glyph name="spark" color="#F19456" />
+        </Pressable>
         <Button variant="raised" accessibilityLabel="Novo lançamento" onPress={onCreateMovement}>
           <View style={styles.stat}>
             <Glyph name="plus" color={colors.primaryForeground} size={18} />
@@ -123,6 +142,7 @@ const styles = StyleSheet.create({
   logo: { width: 56, height: 56 },
   pill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   card: { borderWidth: 1, borderRadius: 20, padding: 16, gap: 8 },
+  invest: { flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderRadius: 20, padding: 14 },
   stats: { flexDirection: "row", alignItems: "center", gap: 12 },
   stat: { flexDirection: "row", alignItems: "center", gap: 6 },
   empty: { alignItems: "center", paddingVertical: 8 },
