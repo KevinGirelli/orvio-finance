@@ -2,7 +2,7 @@
 
 Orvio is local-first. The core of the app is meant to work after you install the APK, without creating an account and without talking to servers run by this project.
 
-This document describes the *intent* of the product. The app itself is still being built; when behaviour ships, this file should stay in sync with it.
+This document describes the intent of the product. The pilot can record accounts and movements offline. If you paste an xAI API key, a question that the local phrases do not understand is sent to xAI with the account names and this month's totals, not the whole database. If you run `apps/bridge` and point Twilio at it, WhatsApp texts are fetched by the phone and replies go back through your Twilio account. Both stay off until those fields are filled.
 
 ## On the device
 

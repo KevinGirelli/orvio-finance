@@ -9,6 +9,7 @@ import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmente
 import { Text } from "@/components/ui/text"
 import { useTheme } from "@/lib/theme"
 import type { Account } from "../domain/ledger.ts"
+import { categoryIds, categoryLabel, type Category } from "../domain/categories.ts"
 import { todayIso } from "./view.ts"
 
 export type MovementKindDraft = "income" | "expense" | "transfer"
@@ -20,6 +21,7 @@ export type MovementDraft = {
   amount: string
   occurredOn: string
   note: string
+  category: Category
 }
 
 type MovementFormProps = {
@@ -37,6 +39,7 @@ export function MovementForm({ accounts, error, onCancel, onSubmit }: MovementFo
   const [amount, setAmount] = useState("")
   const [occurredOn, setOccurredOn] = useState(() => todayIso(new Date()))
   const [note, setNote] = useState("")
+  const [category, setCategory] = useState<Category>("outros")
   const transferNeedsAnother = kind === "transfer" && accounts.length < 2
 
   if (accounts.length === 0) {
@@ -57,7 +60,14 @@ export function MovementForm({ accounts, error, onCancel, onSubmit }: MovementFo
     <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text variant="h3">Novo lançamento</Text>
-        <SegmentedControl value={kind} onValueChange={(value) => setKind(value as MovementKindDraft)}>
+        <SegmentedControl
+          value={kind}
+          onValueChange={(value) => {
+            const next = value as MovementKindDraft
+            setKind(next)
+            setCategory(next === "income" ? "salario" : "outros")
+          }}
+        >
           <SegmentedControlItem value="income">Entrada</SegmentedControlItem>
           <SegmentedControlItem value="expense">Saída</SegmentedControlItem>
           <SegmentedControlItem value="transfer">Transferir</SegmentedControlItem>
@@ -70,6 +80,17 @@ export function MovementForm({ accounts, error, onCancel, onSubmit }: MovementFo
             <AccountPicker accounts={accounts} value={toAccountId} onChange={setToAccountId} />
           </Field>
         ) : null}
+        {kind === "transfer" ? null : (
+          <Field label="Categoria">
+            <View style={styles.chips}>
+              {categoryIds.map((id) => (
+                <Button key={id} size="sm" variant={category === id ? "default" : "outline"} onPress={() => setCategory(id)}>
+                  {categoryLabel[id]}
+                </Button>
+              ))}
+            </View>
+          </Field>
+        )}
         <Field label="Valor">
           <Input
             accessibilityLabel="Valor"
@@ -91,7 +112,7 @@ export function MovementForm({ accounts, error, onCancel, onSubmit }: MovementFo
         {error ? <Text style={{ color: colors.destructive }}>{error}</Text> : null}
         <Button
           disabled={transferNeedsAnother}
-          onPress={() => onSubmit({ kind, accountId, toAccountId, amount, occurredOn, note })}
+          onPress={() => onSubmit({ kind, accountId, toAccountId, amount, occurredOn, note, category })}
         >
           Salvar lançamento
         </Button>
@@ -141,4 +162,5 @@ const styles = StyleSheet.create({
   content: { padding: 20, gap: 16 },
   field: { gap: 8 },
   picker: { gap: 8 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
 })

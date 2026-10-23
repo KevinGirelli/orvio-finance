@@ -104,6 +104,7 @@ test("a transfer moves money and does not change net worth", () => {
       minor: 100000,
       occurredOn: on,
       note: "",
+      category: "outros",
     },
   ])
 })

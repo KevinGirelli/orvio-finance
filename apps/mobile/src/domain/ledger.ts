@@ -1,7 +1,9 @@
+import { isCategory, type Category } from "./categories.ts"
 import { DomainError, money, type Money } from "./money.ts"
 
 export type AccountKind = "checking" | "savings" | "cash"
 export type MovementKind = "income" | "expense" | "transfer" | "opening"
+export type MovementSource = "manual" | "assistant" | "whatsapp"
 
 export type Account = {
   id: string
@@ -19,7 +21,8 @@ export type Movement = {
   transferId: string | null
   occurredOn: string
   note: string
-  source: "manual"
+  category: Category | null
+  source: MovementSource
 }
 
 export type Ledger = {
@@ -35,6 +38,7 @@ export type Activity =
       minor: number
       occurredOn: string
       note: string
+      category: Category | null
     }
   | {
       id: string
@@ -47,7 +51,15 @@ export type Activity =
     }
 
 type AccountInput = { id: string; name: string; kind: AccountKind }
-type PostingInput = { id: string; accountId: string; minor: number; occurredOn: string; note: string }
+type PostingInput = {
+  id: string
+  accountId: string
+  minor: number
+  occurredOn: string
+  note: string
+  category?: Category
+  source?: MovementSource
+}
 type TransferInput = {
   id: string
   fromAccountId: string
@@ -55,6 +67,7 @@ type TransferInput = {
   minor: number
   occurredOn: string
   note: string
+  source?: MovementSource
 }
 
 export function emptyLedger(): Ledger {
@@ -88,7 +101,8 @@ export function postOpening(ledger: Ledger, input: PostingInput): Ledger {
     transferId: null,
     occurredOn: requireDate(input.occurredOn),
     note: requireNote(input.note),
-    source: "manual",
+    category: null,
+    source: input.source ?? "manual",
   })
 }
 
@@ -102,7 +116,8 @@ export function postIncome(ledger: Ledger, input: PostingInput): Ledger {
     transferId: null,
     occurredOn: requireDate(input.occurredOn),
     note: requireNote(input.note),
-    source: "manual",
+    category: requireCategory(input.category),
+    source: input.source ?? "manual",
   })
 }
 
@@ -116,7 +131,8 @@ export function postExpense(ledger: Ledger, input: PostingInput): Ledger {
     transferId: null,
     occurredOn: requireDate(input.occurredOn),
     note: requireNote(input.note),
-    source: "manual",
+    category: requireCategory(input.category),
+    source: input.source ?? "manual",
   })
 }
 
@@ -135,7 +151,8 @@ export function postTransfer(ledger: Ledger, input: TransferInput): Ledger {
     transferId: input.id,
     occurredOn,
     note,
-    source: "manual",
+    category: null,
+    source: input.source ?? "manual",
   })
   return append(withOut, {
     id: `${input.id}:in`,
@@ -145,7 +162,8 @@ export function postTransfer(ledger: Ledger, input: TransferInput): Ledger {
     transferId: input.id,
     occurredOn,
     note,
-    source: "manual",
+    category: null,
+    source: input.source ?? "manual",
   })
 }
 
@@ -199,6 +217,7 @@ export function activity(ledger: Ledger): Activity[] {
         minor: Math.abs(movement.minor),
         occurredOn: movement.occurredOn,
         note: movement.note,
+        category: movement.category,
       },
     })
   })
@@ -246,6 +265,12 @@ function requireDate(value: string): string {
     throw new DomainError("date.invalid")
   }
   return value
+}
+
+function requireCategory(value: Category | undefined): Category {
+  const category = value ?? "outros"
+  if (!isCategory(category)) throw new DomainError("category.invalid")
+  return category
 }
 
 function requireNote(note: string): string {

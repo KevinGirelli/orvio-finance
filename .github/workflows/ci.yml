@@ -77,3 +77,6 @@ jobs:
         run: pnpm typecheck
       - name: Test
         run: pnpm test
+      - name: Test WhatsApp bridge
+        working-directory: apps/bridge
+        run: node --experimental-strip-types --test src/server.test.ts

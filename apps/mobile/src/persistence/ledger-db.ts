@@ -1,5 +1,6 @@
 import { DomainError } from "../domain/money.ts"
-import type { AccountKind, Ledger, Movement, MovementKind } from "../domain/ledger.ts"
+import { isCategory, type Category } from "../domain/categories.ts"
+import type { AccountKind, Ledger, MovementKind, MovementSource } from "../domain/ledger.ts"
 
 export type Sql = {
   exec(statement: string, params?: readonly unknown[]): Promise<void>
@@ -12,7 +13,12 @@ const movementKinds = new Set<MovementKind>(["income", "expense", "transfer", "o
 export async function migrate(sql: Sql): Promise<void> {
   await sql.exec("PRAGMA foreign_keys = ON")
   const version = await userVersion(sql)
-  if (version === 1) return
+  if (version === 2) return
+  if (version === 1) {
+    await sql.exec("ALTER TABLE movements ADD COLUMN category TEXT")
+    await sql.exec("PRAGMA user_version = 2")
+    return
+  }
   if (version !== 0) throw new DomainError("persistence.unknown_version")
 
   await sql.exec(`CREATE TABLE accounts (
@@ -30,9 +36,10 @@ export async function migrate(sql: Sql): Promise<void> {
     transfer_id TEXT,
     occurred_on TEXT NOT NULL,
     note TEXT NOT NULL,
-    source TEXT NOT NULL
+    source TEXT NOT NULL,
+    category TEXT
   )`)
-  await sql.exec("PRAGMA user_version = 1")
+  await sql.exec("PRAGMA user_version = 2")
 }
 
 export async function saveLedger(sql: Sql, ledger: Ledger): Promise<void> {
@@ -48,7 +55,7 @@ export async function saveLedger(sql: Sql, ledger: Ledger): Promise<void> {
     }
     for (const movement of ledger.movements) {
       await sql.exec(
-        "INSERT INTO movements (id, account_id, minor, kind, transfer_id, occurred_on, note, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO movements (id, account_id, minor, kind, transfer_id, occurred_on, note, source, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
           movement.id,
           movement.accountId,
@@ -58,6 +65,7 @@ export async function saveLedger(sql: Sql, ledger: Ledger): Promise<void> {
           movement.occurredOn,
           movement.note,
           movement.source,
+          movement.category,
         ],
       )
     }
@@ -83,7 +91,7 @@ export async function loadLedger(sql: Sql): Promise<Ledger> {
   )
 
   const movements = (await sql.all(
-    "SELECT id, account_id, minor, kind, transfer_id, occurred_on, note, source FROM movements ORDER BY rowid",
+    "SELECT id, account_id, minor, kind, transfer_id, occurred_on, note, source, category FROM movements ORDER BY rowid",
   )).map((row) => ({
     id: text(row.id),
     accountId: text(row.account_id),
@@ -93,6 +101,7 @@ export async function loadLedger(sql: Sql): Promise<Ledger> {
     occurredOn: text(row.occurred_on),
     note: text(row.note),
     source: source(row.source),
+    category: categoryFor(movementKind(row.kind), row.category),
   }))
 
   return { accounts, movements }
@@ -127,7 +136,16 @@ function movementKind(value: unknown): MovementKind {
   return value as MovementKind
 }
 
-function source(value: unknown): Movement["source"] {
-  if (value !== "manual") throw new DomainError("persistence.corrupt")
-  return "manual"
+function source(value: unknown): MovementSource {
+  if (value !== "manual" && value !== "assistant" && value !== "whatsapp") {
+    throw new DomainError("persistence.corrupt")
+  }
+  return value
+}
+
+function categoryFor(kind: MovementKind, value: unknown): Category | null {
+  if (kind === "transfer" || kind === "opening") return null
+  if (value === null || value === undefined) return "outros"
+  if (typeof value !== "string" || !isCategory(value)) throw new DomainError("persistence.corrupt")
+  return value
 }

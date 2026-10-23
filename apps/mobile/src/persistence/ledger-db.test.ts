@@ -74,6 +74,43 @@ test("the SQLCipher key is hex-only", () => {
   assert.throws(() => pragmaKeyStatement(new Uint8Array(16)), { code: "sqlcipher.key_length" })
 })
 
+test("a version 1 database gains categories without dropping movements", async () => {
+  const sql = memorySql()
+  await sql.exec(`CREATE TABLE accounts (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    currency TEXT NOT NULL,
+    archived INTEGER NOT NULL
+  )`)
+  await sql.exec(`CREATE TABLE movements (
+    id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL,
+    minor INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    transfer_id TEXT,
+    occurred_on TEXT NOT NULL,
+    note TEXT NOT NULL,
+    source TEXT NOT NULL
+  )`)
+  await sql.exec("PRAGMA user_version = 1")
+  await sql.exec("INSERT INTO accounts (id, name, kind, currency, archived) VALUES (?, ?, ?, ?, ?)", [
+    "cash",
+    "Carteira",
+    "cash",
+    "BRL",
+    0,
+  ])
+  await sql.exec(
+    "INSERT INTO movements (id, account_id, minor, kind, transfer_id, occurred_on, note, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    ["rent", "cash", -2000, "expense", null, "2026-10-01", "Aluguel", "manual"],
+  )
+  await migrate(sql)
+  const loaded = await loadLedger(sql)
+  assert.equal(loaded.movements[0]?.category, "outros")
+  assert.equal(loaded.movements[0]?.minor, -2000)
+})
+
 function memorySql(): Sql {
   const db = new DatabaseSync(":memory:")
   return {
