@@ -1,5 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http"
 import { signaturesMatch, twilioSignature } from "./signature.ts"
+import { sendTelegram } from "./telegram.ts"
 
 export type BridgeMessage = { id: string; from: string; body: string; sid: string }
 
@@ -9,6 +10,7 @@ export type BridgeOptions = {
   accountSid: string
   whatsappFrom: string
   publicUrl: string
+  telegramToken?: string
   fetchImpl?: typeof fetch
 }
 
@@ -38,15 +40,7 @@ export function createBridge(options: BridgeOptions) {
           respond(response, 403, "text/plain", "invalid signature")
           return
         }
-        const sid = params.MessageSid ?? ""
-        const body = params.Body ?? ""
-        const from = params.From ?? ""
-        if (sid.length === 0 || seen.has(sid)) {
-          respond(response, 200, "text/xml", "<Response></Response>")
-          return
-        }
-        seen.add(sid)
-        queue.push({ id: String(nextId++), from, body, sid })
+        ingest(params.From ?? "", params.Body ?? "", params.MessageSid ?? "")
         respond(response, 200, "text/xml", "<Response></Response>")
         return
       }
@@ -74,7 +68,7 @@ export function createBridge(options: BridgeOptions) {
           respond(response, 400, "application/json", JSON.stringify({ error: "missing" }))
           return
         }
-        await sendWhatsApp(options, to, body)
+        await sendOut(options, to, body)
         respond(response, 204, "application/json", "")
         return
       }
@@ -84,7 +78,15 @@ export function createBridge(options: BridgeOptions) {
     }
   }
 
+  function ingest(from: string, body: string, sid: string) {
+    if (sid.length === 0 || seen.has(sid) || from.length === 0) return false
+    seen.add(sid)
+    queue.push({ id: String(nextId++), from, body, sid })
+    return true
+  }
+
   return {
+    ingest,
     listen(port: number) {
       return new Promise<void>((resolve) => {
         server.listen(port, "127.0.0.1", () => resolve())
@@ -101,6 +103,14 @@ export function createBridge(options: BridgeOptions) {
       return `http://127.0.0.1:${address.port}`
     },
   }
+}
+
+async function sendOut(options: BridgeOptions, to: string, body: string) {
+  if (!to.startsWith("whatsapp:")) {
+    await sendTelegram(options.telegramToken ?? "", to, body, options.fetchImpl ?? fetch)
+    return
+  }
+  await sendWhatsApp(options, to, body)
 }
 
 async function sendWhatsApp(options: BridgeOptions, to: string, body: string) {

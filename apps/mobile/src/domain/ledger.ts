@@ -3,7 +3,7 @@ import { DomainError, money, type Money } from "./money.ts"
 
 export type AccountKind = "checking" | "savings" | "cash"
 export type MovementKind = "income" | "expense" | "transfer" | "opening"
-export type MovementSource = "manual" | "assistant" | "whatsapp"
+export type MovementSource = "manual" | "assistant" | "whatsapp" | "telegram"
 
 export type Account = {
   id: string

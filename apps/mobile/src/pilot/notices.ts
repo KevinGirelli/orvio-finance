@@ -3,10 +3,10 @@ import { formatBrl, money } from "../domain/money.ts"
 import type { Profile } from "../domain/profile.ts"
 import { assess } from "./game.ts"
 
-export function whatsAppAddress(raw: string): string | null {
+export function telegramChatId(raw: string): string | null {
   const digits = raw.replace(/\D/g, "")
-  if (digits.length < 12 || digits.length > 15) return null
-  return `whatsapp:+${digits}`
+  if (digits.length < 5 || digits.length > 15) return null
+  return digits
 }
 
 export function noticeBody(ledger: Ledger, profile: Profile, today: string): string | null {

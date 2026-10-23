@@ -14,24 +14,24 @@ import { messageFor } from "./messages.ts"
 type ProfileScreenProps = {
   profile: Profile
   memoryOnly: boolean
-  whatsappTo: string
+  telegramChat: string
   testNote: string | null
   onSave: (profile: Profile) => void
   onAccent: (accent: Accent) => void
   onOpenAlbum: () => void
-  onChangeWhatsapp: (value: string) => void
+  onChangeTelegram: (value: string) => void
   onTestNotices: () => void
 }
 
 export function ProfileScreen({
   profile,
   memoryOnly,
-  whatsappTo,
+  telegramChat,
   testNote,
   onSave,
   onAccent,
   onOpenAlbum,
-  onChangeWhatsapp,
+  onChangeTelegram,
   onTestNotices,
 }: ProfileScreenProps) {
   const { colors } = useTheme()
@@ -109,20 +109,20 @@ export function ProfileScreen({
           </View>
         </Button>
         <Text variant="h3">Avisos</Text>
-        <Text variant="muted">Uma vez por dia, no WhatsApp, enquanto o Orvio estiver aberto. Não é recomendação.</Text>
+        <Text variant="muted">Uma vez por dia, no Telegram, enquanto o Orvio estiver aberto. O chat entra sozinho na primeira mensagem. Não é recomendação.</Text>
         <NoticeToggle label="Resumo do dia" on={profile.notices.daily} onPress={() => toggle("daily")} />
         <NoticeToggle label="Sequência" on={profile.notices.streak} onPress={() => toggle("streak")} />
         <NoticeToggle label="Teto do mês" on={profile.notices.ceiling} onPress={() => toggle("ceiling")} />
-        <Text variant="small">WhatsApp</Text>
+        <Text variant="small">Chat do Telegram</Text>
         <Input
-          accessibilityLabel="WhatsApp"
-          value={whatsappTo}
-          onChangeText={onChangeWhatsapp}
-          keyboardType="phone-pad"
-          placeholder="+55 48 99999-0000"
+          accessibilityLabel="Chat do Telegram"
+          value={telegramChat}
+          onChangeText={onChangeTelegram}
+          keyboardType="number-pad"
+          placeholder="Preenche na primeira mensagem"
         />
-        <Button variant="raised" accessibilityLabel="Testar avisos no WhatsApp" onPress={onTestNotices}>
-          Testar no WhatsApp
+        <Button variant="raised" accessibilityLabel="Testar avisos no Telegram" onPress={onTestNotices}>
+          Testar no Telegram
         </Button>
         {testNote ? <Text variant="muted">{testNote}</Text> : null}
       </ScrollView>
