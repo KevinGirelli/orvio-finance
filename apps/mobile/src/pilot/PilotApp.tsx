@@ -34,7 +34,7 @@ import { HomeScreen } from "./HomeScreen.tsx"
 import { InvestScreen } from "./InvestScreen.tsx"
 import { messageFor } from "./messages.ts"
 import { Burst } from "./motion.tsx"
-import { noticeBody, whatsAppAddress } from "./notices.ts"
+import { noticeBody, telegramChatId } from "./notices.ts"
 import { MovementForm, type MovementDraft } from "./MovementForm.tsx"
 import { OnboardingScreen } from "./OnboardingScreen.tsx"
 import { ProfileScreen } from "./ProfileScreen.tsx"
@@ -131,7 +131,14 @@ export function PilotApp() {
       try {
         const messages = await pullInbox(baseUrl, secret)
         for (const message of messages) {
-          const reply = await respond(message.body, "whatsapp")
+          const chat = telegramChatId(message.from)
+          if (chat && settingsRef.current.telegramChat.length === 0) {
+            const next = { ...settingsRef.current, telegramChat: chat }
+            settingsRef.current = next
+            setSettings(next)
+            void saveSettings(next)
+          }
+          const reply = await respond(message.body, "telegram")
           await pushReply(baseUrl, secret, message.from, reply)
           await ackInbox(baseUrl, secret, [message.id])
         }
@@ -155,11 +162,11 @@ export function PilotApp() {
     const today = todayIso(new Date())
     if (profile.noticesSentOn === today || noticeSent.current === today) return
     if (!profile.notices.daily && !profile.notices.streak && !profile.notices.ceiling) return
-    if (!whatsAppAddress(settings.whatsappTo)) return
+    if (!telegramChatId(settings.telegramChat)) return
     if (settings.bridgeUrl.trim().length === 0 || settings.bridgeSecret.trim().length === 0) return
     noticeSent.current = today
     void deliverNotices(false)
-  }, [ledger, profile, settings.bridgeUrl, settings.bridgeSecret, settings.whatsappTo])
+  }, [ledger, profile, settings.bridgeUrl, settings.bridgeSecret, settings.telegramChat])
 
   async function persistProfile(next: Profile) {
     setProfile(next)
@@ -171,9 +178,9 @@ export function PilotApp() {
     const current = ledgerRef.current
     if (!current || !profile) return
     const today = todayIso(new Date())
-    const to = whatsAppAddress(settings.whatsappTo)
+    const to = telegramChatId(settings.telegramChat)
     if (!to || settings.bridgeUrl.trim().length === 0 || settings.bridgeSecret.trim().length === 0) {
-      if (manual) setTestNote("Falta o WhatsApp ou o bridge no Orvio.")
+      if (manual) setTestNote("Falta o Telegram ou o bridge no Orvio.")
       return
     }
     const body = noticeBody(current, profile, today)
@@ -184,9 +191,9 @@ export function PilotApp() {
     try {
       await pushReply(settings.bridgeUrl.trim(), settings.bridgeSecret.trim(), to, body)
       if (!manual) await persistProfile({ ...profile, noticesSentOn: today })
-      if (manual) setTestNote("Teste enviado para o WhatsApp.")
+      if (manual) setTestNote("Teste enviado para o Telegram.")
     } catch {
-      if (manual) setTestNote("O WhatsApp não aceitou. A conversa com o sandbox precisa estar aberta.")
+      if (manual) setTestNote("O Telegram não aceitou. O bridge precisa estar no ar com o token do bot.")
     }
   }
 
@@ -377,15 +384,15 @@ export function PilotApp() {
           <ProfileScreen
             profile={profile}
             memoryOnly={memoryOnly}
-            whatsappTo={settings.whatsappTo}
+            telegramChat={settings.telegramChat}
             testNote={testNote}
             onAccent={setRing}
             onSave={(next) => {
               void persistProfile(next)
             }}
             onOpenAlbum={() => setAlbum(true)}
-            onChangeWhatsapp={(whatsappTo) => {
-              const next = { ...settings, whatsappTo }
+            onChangeTelegram={(telegramChat) => {
+              const next = { ...settings, telegramChat }
               setSettings(next)
               void saveSettings(next)
             }}
