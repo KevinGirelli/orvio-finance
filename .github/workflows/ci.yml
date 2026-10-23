@@ -75,3 +75,5 @@ jobs:
           EXPO_NO_TELEMETRY: "1"
       - name: Typecheck
         run: pnpm typecheck
+      - name: Test
+        run: pnpm test
