@@ -5,23 +5,25 @@ import { Button } from "@/components/ui/button"
 import { CountUp } from "@/components/ui/count-up"
 import { Progress } from "@/components/ui/progress"
 import { Text } from "@/components/ui/text"
-import { useTheme } from "@/lib/theme"
+import { useTheme, withAlpha } from "@/lib/theme"
 import { netWorth, type Ledger } from "../domain/ledger.ts"
 import { formatBrl, money } from "../domain/money.ts"
 import type { Profile } from "../domain/profile.ts"
 import { CategoryChart, MonthChart } from "./Charts.tsx"
 import { categorySeries, monthSeries } from "./charts.ts"
 import { assess, type Mood, type Shield } from "./game.ts"
+import { Disc, Glyph, type GlyphName, Wash } from "./icons.tsx"
+import { MovementRow } from "./rows.tsx"
 import { summarize, todayIso } from "./view.ts"
 
-const moodCopy: Record<Mood, string> = {
-  quiet: "Nada lançado ainda.",
-  steady: "O mês está em ordem.",
-  proud: "Sequência firme.",
-  worried: "O teto deste mês passou.",
+const moodMark: Record<Mood, { name: GlyphName; label: string }> = {
+  quiet: { name: "moon", label: "Quieto" },
+  steady: { name: "check", label: "Em ordem" },
+  proud: { name: "flame", label: "Firme" },
+  worried: { name: "alert", label: "Teto" },
 }
 
-const shieldCopy: Record<Shield, string> = {
+const shieldLabel: Record<Shield, string> = {
   none: "Sete dias seguidos ganham um escudo.",
   held: "Escudo pronto.",
   spent: "O escudo segurou um dia.",
@@ -34,75 +36,79 @@ type HomeScreenProps = {
   onCreateMovement: () => void
 }
 
-export function HomeScreen({ ledger, profile, memoryOnly, onCreateMovement }: HomeScreenProps) {
+export function HomeScreen({ ledger, profile, onCreateMovement }: HomeScreenProps) {
   const { colors } = useTheme()
   const today = todayIso(new Date())
   const summary = summarize(ledger)
   const game = assess(ledger, profile, today)
   const worth = netWorth(ledger).minor
+  const mood = moodMark[game.mood]
+  const moodColor = game.mood === "worried" ? "#F19456" : game.mood === "quiet" ? colors.mutedForeground : colors.ring
+  const recent = summary.activity.slice(0, 5)
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
+      <Wash color={colors.ring} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.brand}>
           <Image source={require("../../assets/logo-orvio.png")} style={styles.logo} accessibilityLabel="Orvio" />
           <View style={styles.brandText}>
-            <Text variant="h3">{profile.name ? `Olá, ${profile.name}` : "Orvio"}</Text>
-            <Text variant="muted">{moodCopy[game.mood]}</Text>
+            <Text variant="h3">{profile.name ? profile.name : "Orvio"}</Text>
+            <View style={[styles.pill, { backgroundColor: withAlpha(moodColor, 0.45) }]}>
+              <Glyph name={mood.name} color={moodColor} size={16} />
+              <Text variant="small" style={{ color: moodColor }}>
+                {mood.label}
+              </Text>
+            </View>
           </View>
         </View>
-        {memoryOnly ? (
-          <Text variant="muted">Neste navegador nada é gravado. No Android, o arquivo fica criptografado.</Text>
-        ) : null}
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.card, { backgroundColor: withAlpha(colors.ring, 0.28), borderColor: colors.ring }]}>
           <Text variant="small">Patrimônio</Text>
           <CountUp value={worth} duration={0} format={(value) => formatBrl(money(value))} />
-          <View style={styles.streak}>
-            <Text variant="display" style={{ color: colors.ring, fontSize: 40, lineHeight: 46 }}>
-              {game.streak}
-            </Text>
+          <View style={styles.stats}>
+            <View style={styles.stat}>
+              <Text variant="display" style={{ color: colors.ring, fontSize: 40, lineHeight: 46 }}>
+                {game.streak}
+              </Text>
+              <Glyph name="flame" color={colors.ring} size={18} />
+            </View>
             <View style={styles.brandText}>
-              <Text>dias seguidos</Text>
-              <Text variant="muted">{shieldCopy[game.shield]}</Text>
+              <View style={styles.stat}>
+                <Glyph name="shield" color={game.shield === "none" ? colors.mutedForeground : colors.ring} size={18} />
+                <Text accessibilityLabel={shieldLabel[game.shield]}>Nível {game.level}</Text>
+              </View>
+              <Progress
+                value={Math.round(game.levelProgress * 100)}
+                accessibilityLabel="Nível"
+                indicatorStyle={{ backgroundColor: colors.ring }}
+              />
             </View>
           </View>
-          <Text variant="small">
-            Nível {game.level}
-            {game.nextLevelAt === null ? "" : ` · faltam ${game.nextLevelAt - game.points} dias`}
-          </Text>
-          <Progress
-            value={Math.round(game.levelProgress * 100)}
-            accessibilityLabel="Nível"
-            indicatorStyle={{ backgroundColor: colors.ring }}
-          />
           {game.ceiling ? (
-            <Text variant="muted">
-              Saídas do mês {formatBrl(money(game.ceiling.spent))} de {formatBrl(money(game.ceiling.limit))}
-            </Text>
+            <View style={styles.stat}>
+              <Glyph name="bag" color="#F19456" size={16} />
+              <Text variant="muted">
+                {formatBrl(money(game.ceiling.spent))} / {formatBrl(money(game.ceiling.limit))}
+              </Text>
+            </View>
           ) : null}
         </View>
-        <Text variant="h4">Últimos meses</Text>
         <MonthChart bars={monthSeries(ledger, today)} />
-        <Text variant="h4">Saídas do mês</Text>
         <CategoryChart bars={categorySeries(ledger, today)} />
-        <Button variant="raised" onPress={onCreateMovement}>
-          Novo lançamento
+        <Button variant="raised" accessibilityLabel="Novo lançamento" onPress={onCreateMovement}>
+          <View style={styles.stat}>
+            <Glyph name="plus" color={colors.primaryForeground} size={18} />
+            <Text>Novo</Text>
+          </View>
         </Button>
-        <Text variant="h4">Recentes</Text>
-        {summary.activity.length === 0 ? (
-          <Text variant="muted">Nada lançado ainda.</Text>
+        {recent.length === 0 ? (
+          <View style={styles.empty}>
+            <Disc color={colors.mutedForeground} size={56}>
+              <Glyph name="moon" color={colors.mutedForeground} />
+            </Disc>
+          </View>
         ) : (
-          summary.activity.slice(0, 5).map((item) => (
-            <View key={item.id} style={styles.row}>
-              <View style={styles.rowText}>
-                <Text>{item.title}</Text>
-                <Text variant="muted">
-                  {item.detail} · {item.when}
-                </Text>
-              </View>
-              <Text>{item.amount}</Text>
-            </View>
-          ))
+          recent.map((item) => <MovementRow key={item.id} item={item} />)
         )}
       </ScrollView>
     </SafeAreaView>
@@ -110,13 +116,14 @@ export function HomeScreen({ ledger, profile, memoryOnly, onCreateMovement }: Ho
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
+  screen: { flex: 1, overflow: "hidden" },
   content: { padding: 20, gap: 16, paddingBottom: 32 },
   brand: { flexDirection: "row", alignItems: "center", gap: 12 },
-  brandText: { flex: 1, gap: 2 },
+  brandText: { flex: 1, gap: 6 },
   logo: { width: 56, height: 56 },
-  card: { borderWidth: 1, borderRadius: 16, padding: 16, gap: 8 },
-  streak: { flexDirection: "row", alignItems: "center", gap: 12 },
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  rowText: { flex: 1, gap: 2 },
+  pill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  card: { borderWidth: 1, borderRadius: 20, padding: 16, gap: 8 },
+  stats: { flexDirection: "row", alignItems: "center", gap: 12 },
+  stat: { flexDirection: "row", alignItems: "center", gap: 6 },
+  empty: { alignItems: "center", paddingVertical: 8 },
 })

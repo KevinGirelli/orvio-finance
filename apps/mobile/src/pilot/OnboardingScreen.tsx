@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Text } from "@/components/ui/text"
 import { useTheme } from "@/lib/theme"
-import { accentLabel, accents, profileName, type Accent, type Profile } from "../domain/profile.ts"
+import { accentColor, accentLabel, accents, profileName, type Accent, type Profile } from "../domain/profile.ts"
+import { Glyph } from "./icons.tsx"
 import { messageFor } from "./messages.ts"
 
 type OnboardingScreenProps = {
@@ -68,20 +69,23 @@ export function OnboardingScreen({ onFinish, onSkip, onAccent }: OnboardingScree
         ) : (
           <View style={styles.block}>
             <Text variant="h3">Qual cor acende o app?</Text>
-            {accents.map((item) => {
-              const selected = item === accent
-              return (
-                <Pressable
-                  key={item}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  onPress={() => choose(item)}
-                  style={[styles.choice, { borderColor: selected ? colors.ring : colors.border, backgroundColor: colors.card }]}
-                >
-                  <Text>{accentLabel[item]}</Text>
-                </Pressable>
-              )
-            })}
+            <View style={styles.swatches}>
+              {accents.map((item) => {
+                const selected = item === accent
+                return (
+                  <Pressable
+                    key={item}
+                    accessibilityRole="button"
+                    accessibilityLabel={accentLabel[item]}
+                    accessibilityState={{ selected }}
+                    onPress={() => choose(item)}
+                    style={[styles.swatch, { backgroundColor: accentColor[item], borderColor: selected ? colors.foreground : "transparent" }]}
+                  >
+                    {selected ? <Glyph name="check" color="#0A0A0A" /> : null}
+                  </Pressable>
+                )
+              })}
+            </View>
             <Button
               variant="raised"
               onPress={() => onFinish({ name: profileName(name), accent, ceilingMinor: null, ready: true })}
@@ -102,6 +106,7 @@ const styles = StyleSheet.create({
   bar: { flex: 1, height: 4, borderRadius: 2 },
   content: { padding: 20, gap: 20 },
   logo: { width: 88, height: 88, alignSelf: "center" },
-  block: { gap: 12 },
-  choice: { minHeight: 52, borderWidth: 2, borderRadius: 16, justifyContent: "center", paddingHorizontal: 16 },
+  block: { gap: 16 },
+  swatches: { flexDirection: "row", justifyContent: "center", gap: 16 },
+  swatch: { width: 72, height: 72, borderRadius: 36, borderWidth: 3, alignItems: "center", justifyContent: "center" },
 })

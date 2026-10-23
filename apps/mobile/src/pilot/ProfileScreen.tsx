@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Text } from "@/components/ui/text"
 import { useTheme } from "@/lib/theme"
 import { DomainError, formatBrl, money, parseBrl } from "../domain/money.ts"
-import { accentLabel, accents, profileName, type Accent, type Profile } from "../domain/profile.ts"
+import { accentColor, accentLabel, accents, profileName, type Accent, type Profile } from "../domain/profile.ts"
+import { Glyph } from "./icons.tsx"
 import { messageFor } from "./messages.ts"
 
 type ProfileScreenProps = {
@@ -49,10 +50,7 @@ export function ProfileScreen({ profile, memoryOnly, onSave, onAccent, onOpenAlb
     <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text variant="h3">Perfil</Text>
-        <Text variant="muted">O nome e a cor ficam neste aparelho.</Text>
-        <Text variant="small">Nome</Text>
         <Input accessibilityLabel="Nome" value={name} onChangeText={setName} maxLength={24} />
-        <Text variant="small">Cor</Text>
         <View style={styles.colors}>
           {accents.map((item) => {
             const selected = item === accent
@@ -60,14 +58,15 @@ export function ProfileScreen({ profile, memoryOnly, onSave, onAccent, onOpenAlb
               <Pressable
                 key={item}
                 accessibilityRole="button"
+                accessibilityLabel={accentLabel[item]}
                 accessibilityState={{ selected }}
                 onPress={() => {
                   setAccent(item)
                   onAccent(item)
                 }}
-                style={[styles.choice, { borderColor: selected ? colors.ring : colors.border, backgroundColor: colors.card }]}
+                style={[styles.swatch, { backgroundColor: accentColor[item], borderColor: selected ? colors.foreground : "transparent" }]}
               >
-                <Text>{accentLabel[item]}</Text>
+                {selected ? <Glyph name="check" color="#0A0A0A" size={18} /> : null}
               </Pressable>
             )
           })}
@@ -85,8 +84,11 @@ export function ProfileScreen({ profile, memoryOnly, onSave, onAccent, onOpenAlb
         <Button variant="raised" onPress={save}>
           Guardar neste aparelho
         </Button>
-        <Button variant="outline" onPress={onOpenAlbum}>
-          Álbum
+        <Button variant="outline" accessibilityLabel="Álbum" onPress={onOpenAlbum}>
+          <View style={styles.album}>
+            <Glyph name="album" color={colors.foreground} size={18} />
+            <Text>Álbum</Text>
+          </View>
         </Button>
       </ScrollView>
     </SafeAreaView>
@@ -96,6 +98,7 @@ export function ProfileScreen({ profile, memoryOnly, onSave, onAccent, onOpenAlb
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { padding: 20, gap: 12, paddingBottom: 32 },
-  colors: { gap: 8 },
-  choice: { minHeight: 48, borderWidth: 2, borderRadius: 16, justifyContent: "center", paddingHorizontal: 16 },
+  colors: { flexDirection: "row", gap: 12 },
+  swatch: { width: 56, height: 56, borderRadius: 28, borderWidth: 3, alignItems: "center", justifyContent: "center" },
+  album: { flexDirection: "row", alignItems: "center", gap: 8 },
 })

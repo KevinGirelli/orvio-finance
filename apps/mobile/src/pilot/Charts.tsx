@@ -4,6 +4,7 @@ import { Text } from "@/components/ui/text"
 import { useTheme } from "@/lib/theme"
 import { formatBrl, money } from "../domain/money.ts"
 import type { CategoryBar, MonthBar } from "./charts.ts"
+import { categoryGlyph, categoryInk, Disc, Glyph } from "./icons.tsx"
 
 export function MonthChart({ bars }: { bars: MonthBar[] }) {
   const { colors } = useTheme()
@@ -21,7 +22,6 @@ export function MonthChart({ bars }: { bars: MonthBar[] }) {
           </View>
         ))}
       </View>
-      <Text variant="muted">Verde é entrada, coral é saída. Transferência fica de fora.</Text>
     </View>
   )
 }
@@ -29,22 +29,28 @@ export function MonthChart({ bars }: { bars: MonthBar[] }) {
 export function CategoryChart({ bars }: { bars: CategoryBar[] }) {
   const { colors } = useTheme()
   const max = Math.max(1, ...bars.map((bar) => bar.minor))
-  if (bars.length === 0) {
-    return <Text variant="muted">Nenhuma saída neste mês.</Text>
-  }
+  if (bars.length === 0) return null
   return (
     <View style={styles.block}>
-      {bars.map((bar) => (
-        <View key={bar.category} style={styles.category}>
-          <View style={styles.categoryLabel}>
-            <Text>{bar.label}</Text>
-            <Text variant="muted">{formatBrl(money(bar.minor))}</Text>
+      {bars.map((bar) => {
+        const ink = categoryInk(bar.category, colors.success, colors.mutedForeground)
+        return (
+          <View key={bar.category} style={styles.category}>
+            <Disc color={ink} size={36}>
+              <Glyph name={categoryGlyph(bar.category)} color={ink} size={18} />
+            </Disc>
+            <View style={styles.categoryBody}>
+              <View style={styles.categoryLabel}>
+                <Text>{bar.label}</Text>
+                <Text variant="muted">{formatBrl(money(bar.minor))}</Text>
+              </View>
+              <View style={[styles.track, { backgroundColor: colors.muted }]}>
+                <View style={[styles.fill, { width: `${Math.max(8, (bar.minor / max) * 100)}%`, backgroundColor: ink }]} />
+              </View>
+            </View>
           </View>
-          <View style={[styles.track, { backgroundColor: colors.muted }]}>
-            <View style={[styles.fill, { width: `${Math.max(6, (bar.minor / max) * 100)}%`, backgroundColor: colors.ring }]} />
-          </View>
-        </View>
-      ))}
+        )
+      })}
     </View>
   )
 }
@@ -59,8 +65,9 @@ const styles = StyleSheet.create({
   months: { flexDirection: "row", alignItems: "flex-end", gap: 6, height: 128 },
   month: { flex: 1, alignItems: "center", gap: 6 },
   pair: { height: 96, flexDirection: "row", alignItems: "flex-end", gap: 3 },
-  bar: { width: 8, borderRadius: 4 },
-  category: { gap: 6 },
+  bar: { width: 10, borderRadius: 6 },
+  category: { flexDirection: "row", alignItems: "center", gap: 10 },
+  categoryBody: { flex: 1, gap: 6 },
   categoryLabel: { flexDirection: "row", justifyContent: "space-between" },
   track: { height: 8, borderRadius: 999, overflow: "hidden" },
   fill: { height: 8, borderRadius: 999 },
