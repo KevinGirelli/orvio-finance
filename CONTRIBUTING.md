@@ -37,7 +37,7 @@ The Android UI is built with [Corsair Native](https://corsairui.vercel.app/nativ
 
 - Not a SaaS. Users are not asked to register with us.
 - Not investment advice. Do not add copy that tells someone to buy, sell or hold a security as a product recommendation.
-- Not a place to paste Twilio, xAI, Pluggy, or bank credentials.
+- Not a place to paste Twilio, Gemini, xAI, Pluggy, or bank credentials.
 
 ## Setup
 

@@ -8,6 +8,7 @@ import { Text } from "@/components/ui/text"
 import { ThemeProvider, useTheme } from "@/lib/theme"
 import { applyProposal, describeProposal, interpret, type Proposal } from "../assistant/commands.ts"
 import { askLedger } from "../assistant/grok.ts"
+import { askGemini, isGeminiKey } from "../assistant/gemini.ts"
 import { ackInbox, pullInbox, pushReply } from "../assistant/remote.ts"
 import { emptySettings, loadSettings, saveSettings, type AssistantSettings } from "../assistant/settings.ts"
 import {
@@ -244,20 +245,17 @@ export function PilotApp() {
     if (local.type === "reply") return local.text
     if (local.type === "proposal") return hold(current, local.proposal)
     if (settingsRef.current.xaiKey.trim().length === 0) {
-      return "Não entendi. Sem a chave da API da xAI eu reconheço saldo, resumo e frases como “gastei 32,50 no mercado”."
+      return "Não entendi. Sem a chave do Gemini eu reconheço saldo, resumo e frases como “gastei 32,50 no mercado”."
     }
+    const apiKey = settingsRef.current.xaiKey.trim()
     try {
-      const answer = await askLedger({
-        apiKey: settingsRef.current.xaiKey.trim(),
-        ledger: current,
-        today,
-        message: text,
-        source,
-      })
+      const answer = isGeminiKey(apiKey)
+        ? await askGemini({ apiKey, ledger: current, today, message: text, source })
+        : await askLedger({ apiKey, ledger: current, today, message: text, source })
       if (answer.type === "reply") return answer.text
       return hold(current, answer.proposal)
     } catch {
-      return "Não consegui falar com a xAI. O lançamento não foi feito."
+      return "Não consegui falar com o modelo. O lançamento não foi feito."
     }
   }
 
