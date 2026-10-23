@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Text } from "@/components/ui/text"
 import { useTheme } from "@/lib/theme"
-import { accentColor, accentLabel, accents, profileName, type Accent, type Profile } from "../domain/profile.ts"
+import { emptyProfile, accentColor, accentLabel, accents, profileName, type Accent, type Profile } from "../domain/profile.ts"
 import { Glyph } from "./icons.tsx"
 import { messageFor } from "./messages.ts"
 
@@ -88,7 +88,7 @@ export function OnboardingScreen({ onFinish, onSkip, onAccent }: OnboardingScree
             </View>
             <Button
               variant="raised"
-              onPress={() => onFinish({ name: profileName(name), accent, ceilingMinor: null, ready: true })}
+              onPress={() => onFinish({ ...emptyProfile(), name: profileName(name), accent, ready: true })}
             >
               Entrar
             </Button>
