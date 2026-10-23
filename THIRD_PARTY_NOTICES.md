@@ -4,7 +4,14 @@ Code copied into this repository keeps its original licence notice here.
 
 ## Corsair UI / Corsair Native
 
-The Android interface will install items from [Corsair UI](https://github.com/KevinGirelli/corsair-ui) as source (MIT License, Copyright 2026 Kevin Girelli). Those files will be listed here when they are added.
+Installed as source from [Corsair UI](https://github.com/KevinGirelli/corsair-ui) (MIT License, Copyright 2026 Kevin Girelli):
+
+- `apps/mobile/lib/theme.ts` (`@corsair-native/theme`), with Orvio's `ring` colour
+- `apps/mobile/components/ui/text.tsx` (`@corsair-native/text`)
+
+## Expo blank template
+
+The app was started from `expo-template-blank-typescript` (MIT License, Copyright 2015-present 650 Industries, Inc.). The app's own licence is the repository [MIT licence](./LICENSE).
 
 ## Notices to add later
 

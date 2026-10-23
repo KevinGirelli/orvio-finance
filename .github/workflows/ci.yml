@@ -48,3 +48,27 @@ jobs:
             echo "Refusing files that look like secrets." >&2
             exit 1
           fi
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: apps/mobile/pnpm-lock.yaml
+      - name: Install
+        run: pnpm install --frozen-lockfile
+        env:
+          EXPO_NO_TELEMETRY: "1"
+      - name: Typecheck
+        run: pnpm typecheck
