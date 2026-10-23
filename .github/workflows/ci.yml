@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  hygiene:
+    name: Hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+      - name: Required repository files
+        run: |
+          set -euo pipefail
+          for path in \
+            README.md \
+            LICENSE \
+            SECURITY.md \
+            PRIVACY.md \
+            CONTRIBUTING.md \
+            CODE_OF_CONDUCT.md \
+            THIRD_PARTY_NOTICES.md \
+            logo-orvio.png \
+            .github/pull_request_template.md \
+            .github/ISSUE_TEMPLATE/config.yml \
+            .github/ISSUE_TEMPLATE/bug_report.yml \
+            .github/ISSUE_TEMPLATE/feature_request.yml \
+            .github/dependabot.yml \
+            .github/FUNDING.yml \
+            .github/workflows/ci.yml
+          do
+            test -e "$path"
+          done
+      - name: No obvious secret filenames
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -Ei '(^|/)(\.env|credentials\.json|google-services\.json|id_rsa|\.pem|\.p12|\.jks)$'; then
+            echo "Refusing files that look like secrets." >&2
+            exit 1
+          fi

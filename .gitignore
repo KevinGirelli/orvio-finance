@@ -1,0 +1,39 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+web-build/
+coverage/
+
+# Expo / React Native
+.expo/
+.expo-shared/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+ios/Pods/
+android/.gradle/
+android/app/build/
+android/build/
+
+# Signed artefacts belong in GitHub Releases, not the tree
+*.apk
+*.aab
+*.ipa
+
+# env and secrets
+.env
+.env*.local
+*.pem
+google-services.json
+GoogleService-Info.plist
+
+# os / editors
+.DS_Store
+*.log
+.idea/
+.vscode/

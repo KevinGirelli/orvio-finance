@@ -1,0 +1,44 @@
+name: Bug report
+description: Something in Orvio misbehaves, crashes, or loses data.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do **not** paste bank credentials, API keys, backups, or real transactions.
+        Use made-up amounts and account names if you need an example.
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where
+      options:
+        - Android app
+        - Download site
+        - Backup / restore
+        - Optional integration
+        - Documentation / repository
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App or commit
+      description: APK version, GitHub release tag, or commit SHA.
+  - type: input
+    id: android
+    attributes:
+      label: Android version and device
+      placeholder: Android 15, Pixel 8
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Steps to reproduce, what you expected, and what you got. Redact personal data.
+    validations:
+      required: true
+  - type: textarea
+    id: offline
+    attributes:
+      label: Network
+      description: Did this happen offline, online, or both?

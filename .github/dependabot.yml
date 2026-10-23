@@ -1,0 +1,17 @@
+version: 2
+
+updates:
+  # GitHub Actions. Minor and patch bumps arrive together in one PR;
+  # majors come one per PR so CI can show what each one breaks.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # npm ecosystems will be added when the Expo app and download site land.
+  # Native Expo packages must move together with the SDK (`npx expo install --fix`),
+  # never one by one — same rule Corsair Native uses.
