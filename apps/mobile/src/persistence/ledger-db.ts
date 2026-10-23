@@ -65,7 +65,15 @@ export async function migrate(sql: Sql): Promise<void> {
     await sql.exec("PRAGMA user_version = 4")
     version = 4
   }
-  if (version !== 4) throw new DomainError("persistence.unknown_version")
+  if (version === 4) {
+    await sql.exec("ALTER TABLE profile ADD COLUMN notice_daily INTEGER NOT NULL DEFAULT 1")
+    await sql.exec("ALTER TABLE profile ADD COLUMN notice_streak INTEGER NOT NULL DEFAULT 1")
+    await sql.exec("ALTER TABLE profile ADD COLUMN notice_ceiling INTEGER NOT NULL DEFAULT 1")
+    await sql.exec("ALTER TABLE profile ADD COLUMN notices_sent_on TEXT")
+    await sql.exec("PRAGMA user_version = 5")
+    version = 5
+  }
+  if (version !== 5) throw new DomainError("persistence.unknown_version")
 }
 
 export async function saveHoldings(sql: Sql, holdings: readonly Holding[]): Promise<void> {
@@ -93,16 +101,25 @@ export async function loadHoldings(sql: Sql): Promise<Holding[]> {
 }
 
 export async function saveProfile(sql: Sql, profile: Profile): Promise<void> {
-  await sql.exec("UPDATE profile SET name = ?, accent = ?, ceiling_minor = ?, ready = ? WHERE id = 1", [
-    profile.name,
-    profile.accent,
-    profile.ceilingMinor,
-    profile.ready ? 1 : 0,
-  ])
+  await sql.exec(
+    "UPDATE profile SET name = ?, accent = ?, ceiling_minor = ?, ready = ?, notice_daily = ?, notice_streak = ?, notice_ceiling = ?, notices_sent_on = ? WHERE id = 1",
+    [
+      profile.name,
+      profile.accent,
+      profile.ceilingMinor,
+      profile.ready ? 1 : 0,
+      profile.notices.daily ? 1 : 0,
+      profile.notices.streak ? 1 : 0,
+      profile.notices.ceiling ? 1 : 0,
+      profile.noticesSentOn,
+    ],
+  )
 }
 
 export async function loadProfile(sql: Sql): Promise<Profile> {
-  const rows = await sql.all("SELECT name, accent, ceiling_minor, ready FROM profile WHERE id = 1")
+  const rows = await sql.all(
+    "SELECT name, accent, ceiling_minor, ready, notice_daily, notice_streak, notice_ceiling, notices_sent_on FROM profile WHERE id = 1",
+  )
   const row = rows[0]
   if (!row) throw new DomainError("persistence.corrupt")
   const accent = text(row.accent)
@@ -112,6 +129,12 @@ export async function loadProfile(sql: Sql): Promise<Profile> {
     accent,
     ceilingMinor: row.ceiling_minor === null ? null : integer(row.ceiling_minor),
     ready: row.ready === 1,
+    notices: {
+      daily: row.notice_daily === 1,
+      streak: row.notice_streak === 1,
+      ceiling: row.notice_ceiling === 1,
+    },
+    noticesSentOn: row.notices_sent_on === null ? null : text(row.notices_sent_on),
   }
 }
 

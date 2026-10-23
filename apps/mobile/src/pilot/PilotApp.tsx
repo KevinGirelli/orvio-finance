@@ -34,6 +34,7 @@ import { HomeScreen } from "./HomeScreen.tsx"
 import { InvestScreen } from "./InvestScreen.tsx"
 import { messageFor } from "./messages.ts"
 import { Burst } from "./motion.tsx"
+import { noticeBody, whatsAppAddress } from "./notices.ts"
 import { MovementForm, type MovementDraft } from "./MovementForm.tsx"
 import { OnboardingScreen } from "./OnboardingScreen.tsx"
 import { ProfileScreen } from "./ProfileScreen.tsx"
@@ -53,6 +54,8 @@ export function PilotApp() {
   const [lines, setLines] = useState<ChatLine[]>([])
   const [pending, setPending] = useState<Proposal | null>(null)
   const [settings, setSettings] = useState<AssistantSettings>(emptySettings)
+  const [testNote, setTestNote] = useState<string | null>(null)
+  const noticeSent = useRef<string | null>(null)
   const [bridgeNote, setBridgeNote] = useState<string | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [album, setAlbum] = useState(false)
@@ -147,10 +150,44 @@ export function PilotApp() {
     }
   }, [ledger, settings.bridgeUrl, settings.bridgeSecret])
 
+  useEffect(() => {
+    if (!ledger || !profile?.ready) return
+    const today = todayIso(new Date())
+    if (profile.noticesSentOn === today || noticeSent.current === today) return
+    if (!profile.notices.daily && !profile.notices.streak && !profile.notices.ceiling) return
+    if (!whatsAppAddress(settings.whatsappTo)) return
+    if (settings.bridgeUrl.trim().length === 0 || settings.bridgeSecret.trim().length === 0) return
+    noticeSent.current = today
+    void deliverNotices(false)
+  }, [ledger, profile, settings.bridgeUrl, settings.bridgeSecret, settings.whatsappTo])
+
   async function persistProfile(next: Profile) {
     setProfile(next)
     setRing(next.accent)
     if (storeRef.current) await storeRef.current.saveProfile(next)
+  }
+
+  async function deliverNotices(manual: boolean) {
+    const current = ledgerRef.current
+    if (!current || !profile) return
+    const today = todayIso(new Date())
+    const to = whatsAppAddress(settings.whatsappTo)
+    if (!to || settings.bridgeUrl.trim().length === 0 || settings.bridgeSecret.trim().length === 0) {
+      if (manual) setTestNote("Falta o WhatsApp ou o bridge no Orvio.")
+      return
+    }
+    const body = noticeBody(current, profile, today)
+    if (!body) {
+      if (manual) setTestNote("Todos os avisos estão desligados.")
+      return
+    }
+    try {
+      await pushReply(settings.bridgeUrl.trim(), settings.bridgeSecret.trim(), to, body)
+      if (!manual) await persistProfile({ ...profile, noticesSentOn: today })
+      if (manual) setTestNote("Teste enviado para o WhatsApp.")
+    } catch {
+      if (manual) setTestNote("O WhatsApp não aceitou. A conversa com o sandbox precisa estar aberta.")
+    }
   }
 
   async function persist(next: Ledger) {
@@ -340,11 +377,21 @@ export function PilotApp() {
           <ProfileScreen
             profile={profile}
             memoryOnly={memoryOnly}
+            whatsappTo={settings.whatsappTo}
+            testNote={testNote}
             onAccent={setRing}
             onSave={(next) => {
               void persistProfile(next)
             }}
             onOpenAlbum={() => setAlbum(true)}
+            onChangeWhatsapp={(whatsappTo) => {
+              const next = { ...settings, whatsappTo }
+              setSettings(next)
+              void saveSettings(next)
+            }}
+            onTestNotices={() => {
+              void deliverNotices(true)
+            }}
           />
         ) : null}
         {tab === "assistant" ? (
