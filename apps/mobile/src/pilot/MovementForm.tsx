@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import { useState } from "react"
-import { ScrollView, StyleSheet, View } from "react-native"
+import { Pressable, ScrollView, StyleSheet, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import { useTheme } from "@/lib/theme"
 import type { Account } from "../domain/ledger.ts"
 import { categoryIds, categoryLabel, type Category } from "../domain/categories.ts"
 import { todayIso } from "./view.ts"
+import { categoryGlyph, categoryInk, Glyph } from "./icons.tsx"
 
 export type MovementKindDraft = "income" | "expense" | "transfer"
 
@@ -83,11 +84,22 @@ export function MovementForm({ accounts, error, onCancel, onSubmit }: MovementFo
         {kind === "transfer" ? null : (
           <Field label="Categoria">
             <View style={styles.chips}>
-              {categoryIds.map((id) => (
-                <Button key={id} size="sm" variant={category === id ? "default" : "outline"} onPress={() => setCategory(id)}>
-                  {categoryLabel[id]}
-                </Button>
-              ))}
+              {categoryIds.map((id) => {
+                const selected = category === id
+                const ink = categoryInk(id, colors.success, colors.mutedForeground)
+                return (
+                  <Pressable
+                    key={id}
+                    accessibilityRole="button"
+                    accessibilityLabel={categoryLabel[id]}
+                    accessibilityState={{ selected }}
+                    onPress={() => setCategory(id)}
+                    style={[styles.chip, { backgroundColor: selected ? ink : "transparent", borderColor: ink }]}
+                  >
+                    <Glyph name={categoryGlyph(id)} color={selected ? "#0A0A0A" : ink} size={18} />
+                  </Pressable>
+                )
+              })}
             </View>
           </Field>
         )}
@@ -163,4 +175,5 @@ const styles = StyleSheet.create({
   field: { gap: 8 },
   picker: { gap: 8 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chip: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
 })
