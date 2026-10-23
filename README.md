@@ -43,11 +43,11 @@ Integrations that need the internet (xAI, bank aggregators, market data, a self-
 
 ## Status
 
-The Android app lives in `apps/mobile` (Expo SDK 57, TypeScript, [Corsair Native](https://corsairui.vercel.app/native)). The pilot has accounts, movements, monthly charts, an assistant, and a home card with your name, a streak and a level. Lilac, pink or coral paints the active tab, the streak and the level bar. An optional monthly spending ceiling changes the line under the octopus when expenses pass it; the streak still counts. Stickers are on the profile. Amounts are centavos. A transfer does not change net worth, and it is not drawn as income or spending. Phrases such as “gastei 32,50 no mercado” stay on the device until you confirm them. A key from [console.x.ai](https://console.x.ai) is optional and is stored in the Android keystore; the Cursor Grok Bot is not an API key and is not used. Telegram goes through `apps/bridge`, a server you run yourself with the bot token from @BotFather. The web preview keeps everything in memory. There is no APK yet. `main` only changes through pull requests.
+The Android app lives in `apps/mobile` (Expo SDK 57, TypeScript, [Corsair Native](https://corsairui.vercel.app/native)). The pilot has accounts, movements, monthly charts, an assistant, and a home card with your name, a streak and a level. Lilac, pink or coral paints the active tab, the streak and the level bar. An optional monthly spending ceiling changes the line under the octopus when expenses pass it; the streak still counts. Stickers are on the profile. Amounts are centavos. A transfer does not change net worth, and it is not drawn as income or spending. Phrases such as “gastei 32,50 no mercado” stay on the device until you confirm them. A Gemini API key from [AI Studio](https://aistudio.google.com/apikey) is optional and is stored in the Android keystore. A key that starts with `AQ.` or `AIza` calls Gemini; any other key still calls xAI. The Cursor Grok Bot is not an API key and is not used. Telegram goes through `apps/bridge`, a server you run yourself with the bot token from @BotFather. The web preview keeps everything in memory. There is no APK yet. `main` only changes through pull requests.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) if you want to help, and [PRIVACY.md](./PRIVACY.md) for what is allowed to leave the device.
 
-## Telegram and xAI
+## Telegram and Gemini
 
 The bot token stays in a bridge you run. In Telegram, open @BotFather, send `/newbot`, and copy the token. Copy `apps/bridge/.env.example` to `apps/bridge/.env`, then set `ORVIO_BRIDGE_SECRET` and `TELEGRAM_BOT_TOKEN`. No public address is required. From `apps/bridge`, run:
 
@@ -57,7 +57,7 @@ node --experimental-strip-types --env-file=.env src/main.ts
 
 Open the bot and send `/start`. In the app, open the assistant settings and put `http://127.0.0.1:8787` plus the same secret. The app only pulls messages while it is open. A posting is written after you reply SIM or tap Confirmar. The first private chat is remembered for the daily notices.
 
-The model is `grok-4.7` on `https://api.x.ai/v1/responses`, with your key from [console.x.ai](https://console.x.ai). The Cursor Grok Bot is not that key. Requests ask xAI not to store them (`store: false`). The prompt carries account names and this month's totals, not the database file.
+Paste the Gemini key in the assistant settings. The model is `gemini-flash-lite-latest`. On the free tier Google may use that prompt to improve its products. The prompt carries account names and this month's totals, not the database file. A key from [console.x.ai](https://console.x.ai) still uses `grok-4.7` and asks xAI not to store the request.
 
 ## License
 
