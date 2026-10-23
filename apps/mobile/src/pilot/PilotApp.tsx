@@ -1,10 +1,11 @@
 import * as Haptics from "expo-haptics"
 import { useEffect, useRef, useState } from "react"
-import { ActivityIndicator, Platform, StyleSheet, View } from "react-native"
+import { ActivityIndicator, Image, Platform, StyleSheet, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
+import { Dock, DockItem, DockMark } from "@/components/ui/dock"
 import { Text } from "@/components/ui/text"
-import { useTheme } from "@/lib/theme"
+import { ThemeProvider, useTheme } from "@/lib/theme"
 import { applyProposal, describeProposal, interpret, type Proposal } from "../assistant/commands.ts"
 import { askLedger } from "../assistant/grok.ts"
 import { ackInbox, pullInbox, pushReply } from "../assistant/remote.ts"
@@ -20,16 +21,21 @@ import {
   type MovementSource,
 } from "../domain/ledger.ts"
 import { DomainError, parseBrl } from "../domain/money.ts"
+import { accentColor, emptyProfile, type Accent, type Profile } from "../domain/profile.ts"
 import { openDeviceLedger, type LedgerStore } from "../persistence/device-ledger.ts"
 import { AccountForm } from "./AccountForm.tsx"
 import { AccountsScreen } from "./AccountsScreen.tsx"
 import { ActivityScreen } from "./ActivityScreen.tsx"
+import { AlbumScreen } from "./AlbumScreen.tsx"
 import { AssistantScreen, type ChatLine } from "./AssistantScreen.tsx"
 import { HomeScreen } from "./HomeScreen.tsx"
 import { messageFor } from "./messages.ts"
 import { MovementForm, type MovementDraft } from "./MovementForm.tsx"
-import { TabBar, type TabId } from "./TabBar.tsx"
+import { OnboardingScreen } from "./OnboardingScreen.tsx"
+import { ProfileScreen } from "./ProfileScreen.tsx"
 import { todayIso } from "./view.ts"
+
+type TabId = "home" | "activity" | "assistant" | "accounts" | "profile"
 
 export function PilotApp() {
   const { colors } = useTheme()
@@ -44,6 +50,9 @@ export function PilotApp() {
   const [pending, setPending] = useState<Proposal | null>(null)
   const [settings, setSettings] = useState<AssistantSettings>(emptySettings)
   const [bridgeNote, setBridgeNote] = useState<string | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [album, setAlbum] = useState(false)
+  const [ring, setRing] = useState<Accent>("lilac")
   const ledgerRef = useRef<Ledger | null>(null)
   const pendingRef = useRef<Proposal | null>(null)
   const storeRef = useRef<LedgerStore | null>(null)
@@ -54,6 +63,11 @@ export function PilotApp() {
   settingsRef.current = settings
 
   useEffect(() => {
+    if (!profile?.ready || tab === "profile" || album) return
+    setRing(profile.accent)
+  }, [album, profile, tab])
+
+  useEffect(() => {
     let cancelled = false
     loadSettings().then((loaded) => {
       if (!cancelled) setSettings(loaded)
@@ -61,22 +75,26 @@ export function PilotApp() {
     if (Platform.OS === "web") {
       setMemoryOnly(true)
       setLedger(emptyLedger())
+      setProfile(emptyProfile())
       return () => {
         cancelled = true
       }
     }
     openDeviceLedger()
       .then(async (opened) => {
-        const loaded = await opened.load()
+        const [loaded, storedProfile] = await Promise.all([opened.load(), opened.loadProfile()])
         if (cancelled) return
         setStore(opened)
         setLedger(loaded)
+        setProfile(storedProfile)
+        setRing(storedProfile.accent)
       })
       .catch((error: unknown) => {
         if (cancelled) return
         if (error instanceof DomainError && error.code === "sqlcipher.unavailable") {
           setMemoryOnly(true)
           setLedger(emptyLedger())
+          setProfile(emptyProfile())
           return
         }
         setFailure("Não consegui abrir o arquivo criptografado neste aparelho.")
@@ -116,6 +134,12 @@ export function PilotApp() {
       clearInterval(timer)
     }
   }, [ledger, settings.bridgeUrl, settings.bridgeSecret])
+
+  async function persistProfile(next: Profile) {
+    setProfile(next)
+    setRing(next.accent)
+    if (storeRef.current) await storeRef.current.saveProfile(next)
+  }
 
   async function persist(next: Ledger) {
     if (storeRef.current) await storeRef.current.save(next)
@@ -209,7 +233,7 @@ export function PilotApp() {
     )
   }
 
-  if (!ledger) {
+  if (!ledger || !profile) {
     return (
       <SafeAreaView style={[styles.centered, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={colors.foreground} />
@@ -262,14 +286,42 @@ export function PilotApp() {
     )
   }
 
-  return (
+  const shell = !profile.ready ? (
+    <OnboardingScreen
+      onAccent={setRing}
+      onSkip={() => {
+        void persistProfile(emptyProfileReady())
+      }}
+      onFinish={(next) => {
+        void persistProfile(next)
+      }}
+    />
+  ) : album ? (
+    <AlbumScreen ledger={ledger} profile={profile} onBack={() => setAlbum(false)} />
+  ) : (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <View style={styles.body}>
         {tab === "home" ? (
-          <HomeScreen ledger={ledger} memoryOnly={memoryOnly} onCreateMovement={() => setForm("movement")} />
+          <HomeScreen
+            ledger={ledger}
+            profile={profile}
+            memoryOnly={memoryOnly}
+            onCreateMovement={() => setForm("movement")}
+          />
         ) : null}
         {tab === "activity" ? <ActivityScreen ledger={ledger} onCreate={() => setForm("movement")} /> : null}
         {tab === "accounts" ? <AccountsScreen ledger={ledger} onCreate={() => setForm("account")} /> : null}
+        {tab === "profile" ? (
+          <ProfileScreen
+            profile={profile}
+            memoryOnly={memoryOnly}
+            onAccent={setRing}
+            onSave={(next) => {
+              void persistProfile(next)
+            }}
+            onOpenAlbum={() => setAlbum(true)}
+          />
+        ) : null}
         {tab === "assistant" ? (
           <AssistantScreen
             lines={lines}
@@ -289,9 +341,27 @@ export function PilotApp() {
           />
         ) : null}
       </View>
-      <TabBar value={tab} onChange={setTab} />
+      <Dock value={tab} onValueChange={(value) => setTab(value as TabId)}>
+        <DockItem value="home" label="Início" />
+        <DockItem value="activity" label="Lançamentos" />
+        <DockMark value="assistant" label="Assistente">
+          <Image source={require("../../assets/logo-orvio.png")} style={styles.mark} accessibilityLabel="Orvio" />
+        </DockMark>
+        <DockItem value="accounts" label="Contas" />
+        <DockItem value="profile" label="Perfil" />
+      </Dock>
     </View>
   )
+
+  return (
+    <ThemeProvider scheme="dark" ring={accentColor[ring]}>
+      {shell}
+    </ThemeProvider>
+  )
+}
+
+function emptyProfileReady(): Profile {
+  return { ...emptyProfile(), ready: true }
 }
 
 function postDraft(ledger: Ledger, input: MovementDraft): Ledger {
@@ -322,4 +392,5 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   body: { flex: 1 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24 },
+  mark: { width: 40, height: 40 },
 })

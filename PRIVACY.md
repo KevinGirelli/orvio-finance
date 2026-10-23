@@ -7,6 +7,7 @@ This document describes the intent of the product. The pilot can record accounts
 ## On the device
 
 - Financial records stay in a local database on the Android device.
+- The name, the accent colour and the optional spending ceiling stay in that same database.
 - There is no required Orvio account and no Orvio cloud database.
 - Uninstalling the app on Android removes locally stored secrets. Export a backup first if you want to restore later.
 

@@ -15,7 +15,9 @@ export function AccountsScreen({ ledger, onCreate }: { ledger: Ledger; onCreate:
     <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text variant="h3">Contas</Text>
-        <Button onPress={onCreate}>Nova conta</Button>
+        <Button variant="raised" onPress={onCreate}>
+          Nova conta
+        </Button>
         {summary.accounts.length === 0 ? (
           <Text variant="muted">Abra Inter, Nubank, uma poupança ou o dinheiro em espécie.</Text>
         ) : (

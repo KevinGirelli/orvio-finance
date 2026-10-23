@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { DatabaseSync, type SQLInputValue } from "node:sqlite"
 import { test } from "node:test"
 import { emptyLedger, netWorth, openAccount, postExpense, postIncome, postTransfer } from "../domain/ledger.ts"
-import { loadLedger, migrate, saveLedger, type Sql } from "./ledger-db.ts"
+import { loadLedger, loadProfile, migrate, saveLedger, saveProfile, type Sql } from "./ledger-db.ts"
 import { pragmaKeyStatement, requireCipherVersion } from "./sqlcipher.ts"
 
 const on = "2026-10-23"
@@ -109,6 +109,31 @@ test("a version 1 database gains categories without dropping movements", async (
   const loaded = await loadLedger(sql)
   assert.equal(loaded.movements[0]?.category, "outros")
   assert.equal(loaded.movements[0]?.minor, -2000)
+})
+
+test("a version 2 database gains a profile without dropping movements", async () => {
+  const sql = memorySql()
+  await migrate(sql)
+  let ledger = openAccount(emptyLedger(), { id: "cash", name: "Carteira", kind: "cash" })
+  ledger = postExpense(ledger, {
+    id: "rent",
+    accountId: "cash",
+    minor: 2000,
+    occurredOn: "2026-10-01",
+    note: "Aluguel",
+  })
+  await saveLedger(sql, ledger)
+  await sql.exec("PRAGMA user_version = 2")
+  await sql.exec("DROP TABLE profile")
+  await migrate(sql)
+  const loaded = await loadLedger(sql)
+  const profile = await loadProfile(sql)
+  assert.equal(loaded.movements.length, 1)
+  assert.equal(profile.accent, "lilac")
+  assert.equal(profile.ready, false)
+  await saveProfile(sql, { name: "Kevin", accent: "coral", ceilingMinor: 5000, ready: true })
+  const again = await loadProfile(sql)
+  assert.deepEqual(again, { name: "Kevin", accent: "coral", ceilingMinor: 5000, ready: true })
 })
 
 function memorySql(): Sql {

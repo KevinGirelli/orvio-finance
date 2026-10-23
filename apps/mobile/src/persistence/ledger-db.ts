@@ -1,6 +1,7 @@
 import { DomainError } from "../domain/money.ts"
 import { isCategory, type Category } from "../domain/categories.ts"
 import type { AccountKind, Ledger, MovementKind, MovementSource } from "../domain/ledger.ts"
+import { isAccent, type Profile } from "../domain/profile.ts"
 
 export type Sql = {
   exec(statement: string, params?: readonly unknown[]): Promise<void>
@@ -12,34 +13,69 @@ const movementKinds = new Set<MovementKind>(["income", "expense", "transfer", "o
 
 export async function migrate(sql: Sql): Promise<void> {
   await sql.exec("PRAGMA foreign_keys = ON")
-  const version = await userVersion(sql)
-  if (version === 2) return
-  if (version === 1) {
+  let version = await userVersion(sql)
+  if (version === 0) {
+    await sql.exec(`CREATE TABLE accounts (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      currency TEXT NOT NULL,
+      archived INTEGER NOT NULL
+    )`)
+    await sql.exec(`CREATE TABLE movements (
+      id TEXT PRIMARY KEY,
+      account_id TEXT NOT NULL REFERENCES accounts(id),
+      minor INTEGER NOT NULL,
+      kind TEXT NOT NULL,
+      transfer_id TEXT,
+      occurred_on TEXT NOT NULL,
+      note TEXT NOT NULL,
+      source TEXT NOT NULL,
+      category TEXT
+    )`)
+    await sql.exec("PRAGMA user_version = 2")
+    version = 2
+  } else if (version === 1) {
     await sql.exec("ALTER TABLE movements ADD COLUMN category TEXT")
     await sql.exec("PRAGMA user_version = 2")
-    return
+    version = 2
   }
-  if (version !== 0) throw new DomainError("persistence.unknown_version")
+  if (version === 2) {
+    await sql.exec(`CREATE TABLE profile (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      name TEXT NOT NULL,
+      accent TEXT NOT NULL,
+      ceiling_minor INTEGER,
+      ready INTEGER NOT NULL
+    )`)
+    await sql.exec("INSERT INTO profile (id, name, accent, ceiling_minor, ready) VALUES (1, '', 'lilac', NULL, 0)")
+    await sql.exec("PRAGMA user_version = 3")
+    version = 3
+  }
+  if (version !== 3) throw new DomainError("persistence.unknown_version")
+}
 
-  await sql.exec(`CREATE TABLE accounts (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    kind TEXT NOT NULL,
-    currency TEXT NOT NULL,
-    archived INTEGER NOT NULL
-  )`)
-  await sql.exec(`CREATE TABLE movements (
-    id TEXT PRIMARY KEY,
-    account_id TEXT NOT NULL REFERENCES accounts(id),
-    minor INTEGER NOT NULL,
-    kind TEXT NOT NULL,
-    transfer_id TEXT,
-    occurred_on TEXT NOT NULL,
-    note TEXT NOT NULL,
-    source TEXT NOT NULL,
-    category TEXT
-  )`)
-  await sql.exec("PRAGMA user_version = 2")
+export async function saveProfile(sql: Sql, profile: Profile): Promise<void> {
+  await sql.exec("UPDATE profile SET name = ?, accent = ?, ceiling_minor = ?, ready = ? WHERE id = 1", [
+    profile.name,
+    profile.accent,
+    profile.ceilingMinor,
+    profile.ready ? 1 : 0,
+  ])
+}
+
+export async function loadProfile(sql: Sql): Promise<Profile> {
+  const rows = await sql.all("SELECT name, accent, ceiling_minor, ready FROM profile WHERE id = 1")
+  const row = rows[0]
+  if (!row) throw new DomainError("persistence.corrupt")
+  const accent = text(row.accent)
+  if (!isAccent(accent)) throw new DomainError("persistence.corrupt")
+  return {
+    name: text(row.name),
+    accent,
+    ceilingMinor: row.ceiling_minor === null ? null : integer(row.ceiling_minor),
+    ready: row.ready === 1,
+  }
 }
 
 export async function saveLedger(sql: Sql, ledger: Ledger): Promise<void> {

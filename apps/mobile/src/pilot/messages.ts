@@ -11,6 +11,8 @@ const messages: Record<string, string> = {
   "transfer.same_account": "Escolha duas contas diferentes.",
   "account.not_found": "Essa conta não está mais disponível.",
   "account.archived": "Essa conta está arquivada.",
+  "profile.name_too_long": "O nome cabe em 24 caracteres.",
+  "profile.ceiling_invalid": "O teto precisa ser maior que zero. Deixe vazio para desligar.",
 }
 
 export function messageFor(error: unknown): string {
