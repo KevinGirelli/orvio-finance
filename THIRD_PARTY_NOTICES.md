@@ -8,6 +8,11 @@ Installed as source from [Corsair UI](https://github.com/KevinGirelli/corsair-ui
 
 - `apps/mobile/lib/theme.ts` (`@corsair-native/theme`), with Orvio's `ring` colour
 - `apps/mobile/components/ui/text.tsx` (`@corsair-native/text`)
+- `apps/mobile/components/ui/button.tsx` (`@corsair-native/button`)
+- `apps/mobile/components/ui/input.tsx` (`@corsair-native/input`)
+- `apps/mobile/components/ui/card.tsx` (`@corsair-native/card`)
+- `apps/mobile/components/ui/segmented-control.tsx` (`@corsair-native/segmented-control`)
+- `apps/mobile/hooks/use-reduced-motion.ts` (`@corsair-native/use-reduced-motion`)
 
 ## Expo blank template
 
