@@ -14,7 +14,9 @@ export function ActivityScreen({ ledger, onCreate }: { ledger: Ledger; onCreate:
     <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text variant="h3">Lançamentos</Text>
-        <Button onPress={onCreate}>Novo lançamento</Button>
+        <Button variant="raised" onPress={onCreate}>
+          Novo lançamento
+        </Button>
         {summary.activity.length === 0 ? (
           <Text variant="muted">Quando você lançar uma entrada, saída ou transferência, ela aparece aqui.</Text>
         ) : (

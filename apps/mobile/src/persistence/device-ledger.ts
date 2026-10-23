@@ -7,7 +7,8 @@ import {
 import * as SecureStore from "expo-secure-store"
 import type { Ledger } from "../domain/ledger.ts"
 import { DomainError } from "../domain/money.ts"
-import { loadLedger, migrate, saveLedger, type Sql } from "./ledger-db.ts"
+import type { Profile } from "../domain/profile.ts"
+import { loadLedger, loadProfile, migrate, saveLedger, saveProfile, type Sql } from "./ledger-db.ts"
 import { pragmaKeyStatement, requireCipherVersion } from "./sqlcipher.ts"
 
 const databaseName = "orvio.db"
@@ -16,6 +17,8 @@ const keyName = "orvio.database-key"
 export type LedgerStore = {
   load(): Promise<Ledger>
   save(ledger: Ledger): Promise<void>
+  loadProfile(): Promise<Profile>
+  saveProfile(profile: Profile): Promise<void>
 }
 
 export async function openDeviceLedger(): Promise<LedgerStore> {
@@ -35,6 +38,8 @@ export async function openDeviceLedger(): Promise<LedgerStore> {
   return {
     load: () => loadLedger(sql),
     save: (ledger) => saveLedger(sql, ledger),
+    loadProfile: () => loadProfile(sql),
+    saveProfile: (profile) => saveProfile(sql, profile),
   }
 }
 
