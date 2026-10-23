@@ -13,6 +13,9 @@ const messages: Record<string, string> = {
   "account.archived": "Essa conta está arquivada.",
   "profile.name_too_long": "O nome cabe em 24 caracteres.",
   "profile.ceiling_invalid": "O teto precisa ser maior que zero. Deixe vazio para desligar.",
+  "investment.symbol_invalid": "Use um código como PETR4 ou BTC.",
+  "investment.quantity_invalid": "A quantidade precisa ser maior que zero.",
+  "investment.duplicate": "Esse ativo já está na carteira.",
 }
 
 export function messageFor(error: unknown): string {

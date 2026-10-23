@@ -22,6 +22,7 @@ import {
 } from "../domain/ledger.ts"
 import { DomainError, parseBrl } from "../domain/money.ts"
 import { accentColor, emptyProfile, type Accent, type Profile } from "../domain/profile.ts"
+import type { Holding } from "../domain/investments.ts"
 import { openDeviceLedger, type LedgerStore } from "../persistence/device-ledger.ts"
 import { AccountForm } from "./AccountForm.tsx"
 import { AccountsScreen } from "./AccountsScreen.tsx"
@@ -30,7 +31,9 @@ import { AlbumScreen } from "./AlbumScreen.tsx"
 import { AssistantScreen, type ChatLine } from "./AssistantScreen.tsx"
 import { DockGlyph } from "./icons.tsx"
 import { HomeScreen } from "./HomeScreen.tsx"
+import { InvestScreen } from "./InvestScreen.tsx"
 import { messageFor } from "./messages.ts"
+import { Burst } from "./motion.tsx"
 import { MovementForm, type MovementDraft } from "./MovementForm.tsx"
 import { OnboardingScreen } from "./OnboardingScreen.tsx"
 import { ProfileScreen } from "./ProfileScreen.tsx"
@@ -53,6 +56,9 @@ export function PilotApp() {
   const [bridgeNote, setBridgeNote] = useState<string | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [album, setAlbum] = useState(false)
+  const [invest, setInvest] = useState(false)
+  const [holdings, setHoldings] = useState<Holding[]>([])
+  const [cheer, setCheer] = useState(0)
   const [ring, setRing] = useState<Accent>("lilac")
   const ledgerRef = useRef<Ledger | null>(null)
   const pendingRef = useRef<Proposal | null>(null)
@@ -83,11 +89,16 @@ export function PilotApp() {
     }
     openDeviceLedger()
       .then(async (opened) => {
-        const [loaded, storedProfile] = await Promise.all([opened.load(), opened.loadProfile()])
+        const [loaded, storedProfile, storedHoldings] = await Promise.all([
+          opened.load(),
+          opened.loadProfile(),
+          opened.loadHoldings(),
+        ])
         if (cancelled) return
         setStore(opened)
         setLedger(loaded)
         setProfile(storedProfile)
+        setHoldings(storedHoldings)
         setRing(storedProfile.accent)
       })
       .catch((error: unknown) => {
@@ -146,6 +157,7 @@ export function PilotApp() {
     if (storeRef.current) await storeRef.current.save(next)
     ledgerRef.current = next
     setLedger(next)
+    setCheer((current) => current + 1)
     if (Platform.OS !== "web") {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     }
@@ -297,17 +309,29 @@ export function PilotApp() {
         void persistProfile(next)
       }}
     />
+  ) : invest ? (
+    <InvestScreen
+      holdings={holdings}
+      onChange={(next) => {
+        setHoldings(next)
+        if (storeRef.current) void storeRef.current.saveHoldings(next)
+      }}
+      onBack={() => setInvest(false)}
+    />
   ) : album ? (
     <AlbumScreen ledger={ledger} profile={profile} onBack={() => setAlbum(false)} />
   ) : (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
+      {cheer > 0 ? <Burst key={cheer} /> : null}
       <View style={styles.body}>
         {tab === "home" ? (
           <HomeScreen
             ledger={ledger}
             profile={profile}
             memoryOnly={memoryOnly}
+            worthToken={cheer}
             onCreateMovement={() => setForm("movement")}
+            onOpenInvest={() => setInvest(true)}
           />
         ) : null}
         {tab === "activity" ? <ActivityScreen ledger={ledger} onCreate={() => setForm("movement")} /> : null}
