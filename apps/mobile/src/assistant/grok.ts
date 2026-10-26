@@ -18,6 +18,7 @@ export function ledgerContext(ledger: Ledger, today: string): string {
     `Contas: ${names.join(", ") || "nenhuma"}.`,
     `Neste mês, entradas em centavos: ${month?.income ?? 0}. Saídas em centavos: ${month?.expense ?? 0}.`,
     "Você organiza um livro-caixa pessoal. Não recomende compra ou venda de investimento e não invente cotação.",
+    "Dez centavos é 0,10. Use a conta que a pessoa disser.",
     "Se a pessoa quiser lançar, transferir ou registrar dinheiro, chame propose_movement. Caso contrário, responda em português, curto.",
   ].join("\n")
 }
@@ -84,7 +85,7 @@ const proposeTool = {
   },
 }
 
-function proposalFromArguments(raw: unknown, today: string, source: Proposal["source"]): Proposal | null {
+export function proposalFromArguments(raw: unknown, today: string, source: Proposal["source"]): Proposal | null {
   const parsed = typeof raw === "string" ? safeJson(raw) : record(raw)
   const kind = parsed.kind
   const account = typeof parsed.account === "string" ? parsed.account.trim() : ""
