@@ -3,7 +3,7 @@ import test from "node:test"
 
 import { emptyLedger, openAccount, postExpense, postIncome } from "../domain/ledger.ts"
 import { emptyProfile } from "../domain/profile.ts"
-import { noticeBody, whatsAppAddress } from "./notices.ts"
+import { noticeBody, telegramChatId } from "./notices.ts"
 
 test("a daily notice states the cash picture and skips a turned-off line", () => {
   let ledger = openAccount(emptyLedger(), { id: "cash", name: "Carteira", kind: "cash" })
@@ -23,7 +23,7 @@ test("every notice off produces nothing to send", () => {
   assert.equal(noticeBody(emptyLedger(), profile, "2026-10-23"), null)
 })
 
-test("a WhatsApp address keeps the country code", () => {
-  assert.equal(whatsAppAddress("+55 48 99806-9235"), "whatsapp:+5548998069235")
-  assert.equal(whatsAppAddress("48998069235"), null)
+test("a Telegram chat id is the number Telegram sends", () => {
+  assert.equal(telegramChatId("424242"), "424242")
+  assert.equal(telegramChatId("oi"), null)
 })

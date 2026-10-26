@@ -100,7 +100,7 @@ export function AssistantScreen({
         >
           Enviar
         </Button>
-        <Button variant="ghost" size="icon" accessibilityLabel={openSettings ? "Fechar conexão" : "WhatsApp e chave da xAI"} onPress={() => setOpenSettings((open) => !open)}>
+        <Button variant="ghost" size="icon" accessibilityLabel={openSettings ? "Fechar conexão" : "Telegram e chave da xAI"} onPress={() => setOpenSettings((open) => !open)}>
           <Glyph name="sliders" color={colors.foreground} />
         </Button>
         {openSettings ? (
