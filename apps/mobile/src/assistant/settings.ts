@@ -5,9 +5,10 @@ export type AssistantSettings = {
   xaiKey: string
   bridgeUrl: string
   bridgeSecret: string
+  whatsappTo: string
 }
 
-export const emptySettings: AssistantSettings = { xaiKey: "", bridgeUrl: "", bridgeSecret: "" }
+export const emptySettings: AssistantSettings = { xaiKey: "", bridgeUrl: "", bridgeSecret: "", whatsappTo: "" }
 
 const storageKey = "orvio.assistant"
 
@@ -21,6 +22,7 @@ export async function loadSettings(): Promise<AssistantSettings> {
       xaiKey: typeof parsed.xaiKey === "string" ? parsed.xaiKey : "",
       bridgeUrl: typeof parsed.bridgeUrl === "string" ? parsed.bridgeUrl : "",
       bridgeSecret: typeof parsed.bridgeSecret === "string" ? parsed.bridgeSecret : "",
+      whatsappTo: typeof parsed.whatsappTo === "string" ? parsed.whatsappTo : "",
     }
   } catch {
     return emptySettings
