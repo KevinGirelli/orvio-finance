@@ -1,5 +1,5 @@
-import { categoryLabel } from "../domain/categories.ts"
-import { activity, balance, netWorth, type Ledger } from "../domain/ledger.ts"
+import { categoryLabel, type Category } from "../domain/categories.ts"
+import { activity, balance, netWorth, type AccountKind, type Ledger } from "../domain/ledger.ts"
 import { formatBrl, money } from "../domain/money.ts"
 
 const kindLabel = {
@@ -12,6 +12,7 @@ export type AccountRow = {
   id: string
   name: string
   kind: string
+  kindKey: AccountKind
   balance: string
 }
 
@@ -21,6 +22,8 @@ export type ActivityRow = {
   detail: string
   amount: string
   when: string
+  kind: "income" | "expense" | "transfer" | "opening"
+  category: Category | null
 }
 
 export type Summary = {
@@ -46,6 +49,7 @@ export function summarize(ledger: Ledger): Summary {
         id: account.id,
         name: account.name,
         kind: kindLabel[account.kind],
+        kindKey: account.kind,
         balance: formatBrl(balance(ledger, account.id)),
       })),
     activity: activity(ledger).map((item) => {
@@ -56,6 +60,8 @@ export function summarize(ledger: Ledger): Summary {
           detail: item.note || "Transferência",
           amount: formatBrl(money(item.minor)),
           when: item.occurredOn,
+          kind: "transfer",
+          category: null,
         }
       }
       const accountName = names.get(item.accountId) ?? "Conta"
@@ -70,6 +76,8 @@ export function summarize(ledger: Ledger): Summary {
         detail: category ? `${category} · ${accountName}` : accountName,
         amount: formatBrl(money(signed)),
         when: item.occurredOn,
+        kind: item.kind,
+        category: item.category,
       }
     }),
   }

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
 import { useTheme } from "@/lib/theme"
 import type { Ledger } from "../domain/ledger.ts"
+import { Disc, Glyph } from "./icons.tsx"
+import { MovementRow } from "./rows.tsx"
 import { summarize } from "./view.ts"
 
 export function ActivityScreen({ ledger, onCreate }: { ledger: Ledger; onCreate: () => void }) {
@@ -13,24 +15,24 @@ export function ActivityScreen({ ledger, onCreate }: { ledger: Ledger; onCreate:
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text variant="h3">Lançamentos</Text>
-        <Button variant="raised" onPress={onCreate}>
-          Novo lançamento
+        <View style={styles.top}>
+          <Disc color={colors.ring}>
+            <Glyph name="list" color={colors.ring} />
+          </Disc>
+          <Text variant="h3">Lista</Text>
+        </View>
+        <Button variant="raised" accessibilityLabel="Novo lançamento" onPress={onCreate}>
+          <View style={styles.plus}>
+            <Glyph name="plus" color={colors.primaryForeground} size={18} />
+            <Text>Novo</Text>
+          </View>
         </Button>
         {summary.activity.length === 0 ? (
-          <Text variant="muted">Quando você lançar uma entrada, saída ou transferência, ela aparece aqui.</Text>
+          <View style={styles.empty}>
+            <Glyph name="moon" color={colors.mutedForeground} size={36} />
+          </View>
         ) : (
-          summary.activity.map((item) => (
-            <View key={item.id} style={styles.row}>
-              <View style={styles.rowText}>
-                <Text>{item.title}</Text>
-                <Text variant="muted">
-                  {item.detail} · {item.when}
-                </Text>
-              </View>
-              <Text>{item.amount}</Text>
-            </View>
-          ))
+          summary.activity.map((item) => <MovementRow key={item.id} item={item} />)
         )}
       </ScrollView>
     </SafeAreaView>
@@ -40,6 +42,7 @@ export function ActivityScreen({ ledger, onCreate }: { ledger: Ledger; onCreate:
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { padding: 20, gap: 16, paddingBottom: 32 },
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  rowText: { flex: 1, gap: 2 },
+  top: { flexDirection: "row", alignItems: "center", gap: 12 },
+  plus: { flexDirection: "row", alignItems: "center", gap: 8 },
+  empty: { alignItems: "center", paddingVertical: 24 },
 })

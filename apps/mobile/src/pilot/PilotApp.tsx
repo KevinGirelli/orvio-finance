@@ -28,6 +28,7 @@ import { AccountsScreen } from "./AccountsScreen.tsx"
 import { ActivityScreen } from "./ActivityScreen.tsx"
 import { AlbumScreen } from "./AlbumScreen.tsx"
 import { AssistantScreen, type ChatLine } from "./AssistantScreen.tsx"
+import { DockGlyph } from "./icons.tsx"
 import { HomeScreen } from "./HomeScreen.tsx"
 import { messageFor } from "./messages.ts"
 import { MovementForm, type MovementDraft } from "./MovementForm.tsx"
@@ -342,13 +343,21 @@ export function PilotApp() {
         ) : null}
       </View>
       <Dock value={tab} onValueChange={(value) => setTab(value as TabId)}>
-        <DockItem value="home" label="Início" />
-        <DockItem value="activity" label="Lançamentos" />
-        <DockMark value="assistant" label="Assistente">
+        <DockItem value="home" label="Início">
+          <DockGlyph name="home" />
+        </DockItem>
+        <DockItem value="activity" label="Lista">
+          <DockGlyph name="list" />
+        </DockItem>
+        <DockMark value="assistant" label="Orvio">
           <Image source={require("../../assets/logo-orvio.png")} style={styles.mark} accessibilityLabel="Orvio" />
         </DockMark>
-        <DockItem value="accounts" label="Contas" />
-        <DockItem value="profile" label="Perfil" />
+        <DockItem value="accounts" label="Contas">
+          <DockGlyph name="wallet" />
+        </DockItem>
+        <DockItem value="profile" label="Perfil">
+          <DockGlyph name="user" />
+        </DockItem>
       </Dock>
     </View>
   )

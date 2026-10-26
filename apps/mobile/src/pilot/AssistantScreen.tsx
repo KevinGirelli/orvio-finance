@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Text } from "@/components/ui/text"
-import { useTheme } from "@/lib/theme"
+import { useTheme, withAlpha } from "@/lib/theme"
 import type { Proposal } from "../assistant/commands.ts"
 import { describeProposal } from "../assistant/commands.ts"
 import type { AssistantSettings } from "../assistant/settings.ts"
+import { Glyph } from "./icons.tsx"
 
 export type ChatLine = { id: string; role: "user" | "orvio"; text: string }
 
@@ -46,13 +47,21 @@ export function AssistantScreen({
     <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text variant="h3">Assistente</Text>
-        <Text variant="muted">
-          Frases como “gastei 32,50 no mercado” funcionam sem internet. A chave da API da xAI, se você colar, só sai
-          deste aparelho na hora da pergunta. A chave do Grok dentro do Cursor não serve aqui.
-        </Text>
-        {lines.length === 0 ? <Text variant="muted">Pergunte o saldo ou descreva um lançamento.</Text> : null}
+        {lines.length === 0 ? (
+          <View style={styles.empty}>
+            <Glyph name="spark" color={colors.ring} size={36} />
+          </View>
+        ) : null}
         {lines.map((line) => (
-          <View key={line.id} style={[styles.bubble, { backgroundColor: line.role === "user" ? colors.muted : colors.card }]}>
+          <View
+            key={line.id}
+            style={[
+              styles.bubble,
+              line.role === "user"
+                ? { backgroundColor: withAlpha(colors.ring, 0.28), alignSelf: "flex-end" }
+                : { backgroundColor: colors.card, alignSelf: "flex-start" },
+            ]}
+          >
             <Text>{line.text}</Text>
           </View>
         ))}
@@ -91,8 +100,8 @@ export function AssistantScreen({
         >
           Enviar
         </Button>
-        <Button variant="ghost" onPress={() => setOpenSettings((open) => !open)}>
-          {openSettings ? "Fechar conexão" : "WhatsApp e chave da xAI"}
+        <Button variant="ghost" size="icon" accessibilityLabel={openSettings ? "Fechar conexão" : "WhatsApp e chave da xAI"} onPress={() => setOpenSettings((open) => !open)}>
+          <Glyph name="sliders" color={colors.foreground} />
         </Button>
         {openSettings ? (
           <View style={styles.settings}>
@@ -124,14 +133,9 @@ export function AssistantScreen({
               secureTextEntry
             />
             <Button variant="outline" onPress={onSaveSettings}>
-              Guardar neste aparelho
+              Guardar
             </Button>
-            <Text variant="muted">
-              {memoryOnly
-                ? "No navegador esses campos valem só até recarregar."
-                : "No Android eles ficam no cofre do aparelho, não no repositório."}{" "}
-              O Twilio fica no bridge que você sobe. O app só busca as mensagens e manda a resposta.
-            </Text>
+            {memoryOnly ? <Text variant="muted">Vale só até recarregar.</Text> : null}
           </View>
         ) : null}
       </ScrollView>
@@ -142,7 +146,8 @@ export function AssistantScreen({
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { padding: 20, gap: 12, paddingBottom: 32 },
-  bubble: { borderRadius: 12, padding: 12 },
+  bubble: { borderRadius: 16, padding: 12, maxWidth: "88%" },
+  empty: { alignItems: "center", paddingVertical: 12 },
   row: { flexDirection: "row", gap: 8 },
   flex: { flex: 1 },
   settings: { gap: 8 },
