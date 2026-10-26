@@ -238,7 +238,7 @@ function movementKind(value: unknown): MovementKind {
 }
 
 function source(value: unknown): MovementSource {
-  if (value !== "manual" && value !== "assistant" && value !== "whatsapp") {
+  if (value !== "manual" && value !== "assistant" && value !== "whatsapp" && value !== "telegram") {
     throw new DomainError("persistence.corrupt")
   }
   return value
