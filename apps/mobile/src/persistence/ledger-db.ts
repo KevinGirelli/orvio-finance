@@ -2,6 +2,7 @@ import { DomainError } from "../domain/money.ts"
 import { isCategory, type Category } from "../domain/categories.ts"
 import type { AccountKind, Ledger, MovementKind, MovementSource } from "../domain/ledger.ts"
 import { isAccent, type Profile } from "../domain/profile.ts"
+import type { Holding, HoldingKind } from "../domain/investments.ts"
 
 export type Sql = {
   exec(statement: string, params?: readonly unknown[]): Promise<void>
@@ -52,7 +53,43 @@ export async function migrate(sql: Sql): Promise<void> {
     await sql.exec("PRAGMA user_version = 3")
     version = 3
   }
-  if (version !== 3) throw new DomainError("persistence.unknown_version")
+  if (version === 3) {
+    await sql.exec(`CREATE TABLE holdings (
+      id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL,
+      symbol TEXT NOT NULL,
+      quantity_micros INTEGER NOT NULL,
+      price_minor INTEGER,
+      change_hundredths INTEGER
+    )`)
+    await sql.exec("PRAGMA user_version = 4")
+    version = 4
+  }
+  if (version !== 4) throw new DomainError("persistence.unknown_version")
+}
+
+export async function saveHoldings(sql: Sql, holdings: readonly Holding[]): Promise<void> {
+  await sql.exec("DELETE FROM holdings")
+  for (const holding of holdings) {
+    await sql.exec(
+      "INSERT INTO holdings (id, kind, symbol, quantity_micros, price_minor, change_hundredths) VALUES (?, ?, ?, ?, ?, ?)",
+      [holding.id, holding.kind, holding.symbol, holding.quantityMicros, holding.priceMinor, holding.changeHundredths],
+    )
+  }
+}
+
+export async function loadHoldings(sql: Sql): Promise<Holding[]> {
+  const rows = await sql.all(
+    "SELECT id, kind, symbol, quantity_micros, price_minor, change_hundredths FROM holdings ORDER BY symbol",
+  )
+  return rows.map((row) => ({
+    id: text(row.id),
+    kind: holdingKind(row.kind),
+    symbol: text(row.symbol),
+    quantityMicros: integer(row.quantity_micros),
+    priceMinor: row.price_minor === null ? null : integer(row.price_minor),
+    changeHundredths: row.change_hundredths === null ? null : integer(row.change_hundredths),
+  }))
 }
 
 export async function saveProfile(sql: Sql, profile: Profile): Promise<void> {
@@ -155,6 +192,11 @@ function text(value: unknown): string {
 
 function integer(value: unknown): number {
   if (typeof value !== "number" || !Number.isInteger(value)) throw new DomainError("persistence.corrupt")
+  return value
+}
+
+function holdingKind(value: unknown): HoldingKind {
+  if (value !== "stock" && value !== "crypto") throw new DomainError("persistence.corrupt")
   return value
 }
 
