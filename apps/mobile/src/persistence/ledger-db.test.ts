@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { DatabaseSync, type SQLInputValue } from "node:sqlite"
 import { test } from "node:test"
 import { emptyLedger, netWorth, openAccount, postExpense, postIncome, postTransfer } from "../domain/ledger.ts"
-import { loadLedger, loadProfile, migrate, saveLedger, saveProfile, type Sql } from "./ledger-db.ts"
+import { loadHoldings, loadLedger, loadProfile, migrate, saveHoldings, saveLedger, saveProfile, type Sql } from "./ledger-db.ts"
 import { pragmaKeyStatement, requireCipherVersion } from "./sqlcipher.ts"
 
 const on = "2026-10-23"
@@ -125,6 +125,7 @@ test("a version 2 database gains a profile without dropping movements", async ()
   await saveLedger(sql, ledger)
   await sql.exec("PRAGMA user_version = 2")
   await sql.exec("DROP TABLE profile")
+  await sql.exec("DROP TABLE holdings")
   await migrate(sql)
   const loaded = await loadLedger(sql)
   const profile = await loadProfile(sql)
@@ -134,6 +135,29 @@ test("a version 2 database gains a profile without dropping movements", async ()
   await saveProfile(sql, { name: "Kevin", accent: "coral", ceilingMinor: 5000, ready: true })
   const again = await loadProfile(sql)
   assert.deepEqual(again, { name: "Kevin", accent: "coral", ceilingMinor: 5000, ready: true })
+})
+
+test("a version 3 database gains holdings without dropping movements", async () => {
+  const sql = memorySql()
+  await migrate(sql)
+  let ledger = openAccount(emptyLedger(), { id: "cash", name: "Carteira", kind: "cash" })
+  ledger = postExpense(ledger, {
+    id: "rent",
+    accountId: "cash",
+    minor: 2000,
+    occurredOn: "2026-10-01",
+    note: "Aluguel",
+  })
+  await saveLedger(sql, ledger)
+  await sql.exec("PRAGMA user_version = 3")
+  await sql.exec("DROP TABLE holdings")
+  await migrate(sql)
+  const loaded = await loadLedger(sql)
+  assert.equal(loaded.movements.length, 1)
+  await saveHoldings(sql, [
+    { id: "btc", kind: "crypto", symbol: "BTC", quantityMicros: 1_500_000, priceMinor: 100, changeHundredths: -20 },
+  ])
+  assert.equal((await loadHoldings(sql))[0]?.symbol, "BTC")
 })
 
 function memorySql(): Sql {
