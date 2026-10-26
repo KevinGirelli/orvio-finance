@@ -2,7 +2,7 @@
 
 Orvio is local-first. The core of the app is meant to work after you install the APK, without creating an account and without talking to servers run by this project.
 
-This document describes the intent of the product. The pilot can record accounts and movements offline. If you paste an xAI API key, a question that the local phrases do not understand is sent to xAI with the account names and this month's totals, not the whole database. If you run `apps/bridge` with a Telegram bot token, messages are fetched by the phone and replies go back through that bot. Both stay off until those fields are filled.
+This document describes the intent of the product. The pilot can record accounts and movements offline. If you paste a Gemini or xAI API key, a question that the local phrases do not understand is sent to that provider with the account names and this month's totals, not the whole database. On Gemini's free tier, Google may use that prompt to improve its products. If you run `apps/bridge` with a Telegram bot token, messages are fetched by the phone and replies go back through that bot. Both stay off until those fields are filled.
 
 ## On the device
 
@@ -24,7 +24,7 @@ Each of the following is off until the user turns it on. The UI should say that 
 | Feature | Who receives data | What is sent |
 | --- | --- | --- |
 | Encrypted backup file | Wherever the user saves it (Files, Drive, USB, …) | An encrypted archive the user chose to export |
-| Large language model | The provider of the key the user pasted (for example xAI) | The minimum prompt needed for that request, never the whole ledger |
+| Large language model | The provider of the key the user pasted (Gemini or xAI) | The minimum prompt needed for that request, never the whole ledger |
 | Market data | The provider of the key the user pasted | Tickers and queries, not account numbers |
 | Open Finance | The aggregator and bank the user authorised | Whatever that consent screen grants |
 | Telegram assistant | The user's own bridge, plus Telegram | Message text for that conversation |

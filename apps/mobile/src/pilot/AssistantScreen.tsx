@@ -100,14 +100,14 @@ export function AssistantScreen({
         >
           Enviar
         </Button>
-        <Button variant="ghost" size="icon" accessibilityLabel={openSettings ? "Fechar conexão" : "Telegram e chave da xAI"} onPress={() => setOpenSettings((open) => !open)}>
+        <Button variant="ghost" size="icon" accessibilityLabel={openSettings ? "Fechar conexão" : "Telegram e chave do Gemini"} onPress={() => setOpenSettings((open) => !open)}>
           <Glyph name="sliders" color={colors.foreground} />
         </Button>
         {openSettings ? (
           <View style={styles.settings}>
-            <Text variant="small">Chave da API da xAI</Text>
+            <Text variant="small">Chave do Gemini</Text>
             <Input
-              accessibilityLabel="Chave da API da xAI"
+              accessibilityLabel="Chave do Gemini"
               value={settings.xaiKey}
               onChangeText={(xaiKey) => onChangeSettings({ ...settings, xaiKey })}
               autoCapitalize="none"
