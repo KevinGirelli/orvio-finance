@@ -132,9 +132,20 @@ test("a version 2 database gains a profile without dropping movements", async ()
   assert.equal(loaded.movements.length, 1)
   assert.equal(profile.accent, "lilac")
   assert.equal(profile.ready, false)
-  await saveProfile(sql, { name: "Kevin", accent: "coral", ceilingMinor: 5000, ready: true })
+  assert.equal(profile.notices.daily, true)
+  assert.equal(profile.noticesSentOn, null)
+  await saveProfile(sql, {
+    name: "Kevin",
+    accent: "coral",
+    ceilingMinor: 5000,
+    ready: true,
+    notices: { daily: false, streak: true, ceiling: false },
+    noticesSentOn: "2026-10-23",
+  })
   const again = await loadProfile(sql)
-  assert.deepEqual(again, { name: "Kevin", accent: "coral", ceilingMinor: 5000, ready: true })
+  assert.equal(again.notices.daily, false)
+  assert.equal(again.notices.streak, true)
+  assert.equal(again.noticesSentOn, "2026-10-23")
 })
 
 test("a version 3 database gains holdings without dropping movements", async () => {
@@ -151,6 +162,10 @@ test("a version 3 database gains holdings without dropping movements", async () 
   await saveLedger(sql, ledger)
   await sql.exec("PRAGMA user_version = 3")
   await sql.exec("DROP TABLE holdings")
+  await sql.exec("ALTER TABLE profile DROP COLUMN notice_daily")
+  await sql.exec("ALTER TABLE profile DROP COLUMN notice_streak")
+  await sql.exec("ALTER TABLE profile DROP COLUMN notice_ceiling")
+  await sql.exec("ALTER TABLE profile DROP COLUMN notices_sent_on")
   await migrate(sql)
   const loaded = await loadLedger(sql)
   assert.equal(loaded.movements.length, 1)

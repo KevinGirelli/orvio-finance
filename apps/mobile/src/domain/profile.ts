@@ -16,15 +16,25 @@ export const accentLabel: Record<Accent, string> = {
   coral: "Coral",
 }
 
+export type NoticePrefs = {
+  daily: boolean
+  streak: boolean
+  ceiling: boolean
+}
+
+export const defaultNotices: NoticePrefs = { daily: true, streak: true, ceiling: true }
+
 export type Profile = {
   name: string
   accent: Accent
   ceilingMinor: number | null
   ready: boolean
+  notices: NoticePrefs
+  noticesSentOn: string | null
 }
 
 export function emptyProfile(): Profile {
-  return { name: "", accent: "lilac", ceilingMinor: null, ready: false }
+  return { name: "", accent: "lilac", ceilingMinor: null, ready: false, notices: { ...defaultNotices }, noticesSentOn: null }
 }
 
 export function isAccent(value: string): value is Accent {
